@@ -186,7 +186,7 @@
     <h5 class="text-center"><span class="text-success font-weight-bold">{{ user }}</span></h6>
     <h6 class="text-center mb-5"><span class="text-success font-weight-bold">{{ user.department }}</span></h6>
 
-    <form method="POST">
+    <form method="POST" id="surveyForm">
         {% csrf_token %}
         <!-- Type of Client -->
         <div class="section-title text-center">Type of Client</div>
@@ -387,7 +387,9 @@
 
         <!-- Submit Button -->
         <div class="text-center mb-5">
-            <button type="submit" id="btnSubmit" class="btn btn-success btn-block p-4">Submit Survey Responses</button>
+            <button type="submit" id="btnSubmit" class="btn btn-success btn-block p-4">
+                <span id="buttonText">Submit Survey Responses</span>
+            </button>
         </div>
     </form>
 </div>
@@ -469,6 +471,22 @@
 
     document.querySelector("#btnSubmit").addEventListener("click", get_geolocation);
     */
+
+
+    // spinner
+    document.getElementById("surveyForm").addEventListener("submit", function(event) {
+        const submitButton = document.getElementById("btnSubmit");
+        const buttonText = document.getElementById("buttonText");
+
+        // Disable the submit button
+        submitButton.disabled = true;
+
+        // Show spinner and hide button text
+        buttonText.innerHTML = `
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Submitting...
+        `;
+    });
 </script>
 </body>
 </html>

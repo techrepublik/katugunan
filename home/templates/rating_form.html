@@ -56,37 +56,55 @@
 </head>
 <body>
 
-<div class="container mt-5">
-    <h3 class="text-center">Thank you for your feedback!</h3>
-    <p class="text-center">Please take a moment to rate your experience using our application.</p>
-    <hr>
+    <div class="container mt-5">
+        <h3 class="text-center">Thank you for your feedback!</h3>
+        <p class="text-center">Please take a moment to rate your experience using our application.</p>
+        <hr>
 
-    <form method="post" class="mt-4">
-        {% csrf_token %}
-        
-        <!-- Centered star rating system with 5 stars only -->
-        <div class="form-group text-center">
-            <label for="rating" class="font-weight-bold">Rate your experience (number of stars)</label>
-            <br>
-            <div class="star-rating">
-                {% for i in "54321" %}
-                    <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if form.rating.value == i %}checked{% endif %}>
-                    <label for="star{{ i }}">&#9733;</label>
-                {% endfor %}
+        <form method="post" class="mt-4" id="ratingForm">
+            {% csrf_token %}
+            
+            <!-- Centered star rating system with 5 stars only -->
+            <div class="form-group text-center">
+                <label for="rating" class="font-weight-bold">Rate your experience (number of stars)</label>
+                <br>
+                <div class="star-rating">
+                    {% for i in "54321" %}
+                        <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if form.rating.value == i %}checked{% endif %}>
+                        <label for="star{{ i }}">&#9733;</label>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
 
-        <!-- Optional comments section -->
-        <div class="form-group">
-            <label for="comments" class="font-weight-bold">Comments (optional):</label>
-            {{ form.comments }}
-        </div>
+            <!-- Optional comments section -->
+            <div class="form-group">
+                <label for="comments" class="font-weight-bold">Comments (optional):</label>
+                {{ form.comments }}
+            </div>
 
-        <!-- Submit button -->
-        <button type="submit" class="btn btn-success btn-block">Submit Rating</button>
-        <a href="{% url "home:survey_success" %}" class="btn btn-outline-info btn-block">No, thank you</a>
-    </form>
-</div>
+            <!-- Submit button -->
+            <button type="submit" id="btnSubmit" class="btn btn-success btn-block p-4">
+                <span id="buttonText">Submit Rating</span>
+            </button>
+            <a href="{% url "home:survey_success" %}" class="btn btn-outline-info btn-block">No, thank you</a>
+        </form>
+    </div>
 
+<script>
+    // spinner
+    document.getElementById("ratingForm").addEventListener("submit", function(event) {
+        const submitButton = document.getElementById("btnSubmit");
+        const buttonText = document.getElementById("buttonText");
+
+        // Disable the submit button
+        submitButton.disabled = true;
+
+        // Show spinner and hide button text
+        buttonText.innerHTML = `
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Submitting...
+        `;
+    });
+</script>
 </body>
 </html>
