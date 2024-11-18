@@ -1,0 +1,9 @@
+<tr id="unit-{{unit.id}}">
+    <td>{{ unit.unit_name }}</td>
+    <td>{{ unit.unit_short_name }}{{response.level}}</td>
+    <td>{{ unit.unit_type }}</td>
+    <td>
+        <button class="btn btn-sm btn-secondary" hx-get="{% url 'home:unit_update' unit.id %}" hx-trigger="click" hx-target="#modal-body" data-toggle="modal" data-target="#unitModal">Edit</button>
+        <button class="btn btn-sm btn-danger" hx-delete="{% url 'home:unit_delete' unit.id %}" hx-target="#unit-{{ unit.id }}" hx-swap="outerHTML" hx-confirm="Are you sure to delete this record?">Del</button>
+    </td>
+</tr>

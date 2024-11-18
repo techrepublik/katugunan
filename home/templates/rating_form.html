@@ -1,0 +1,92 @@
+<!-- rating_form.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Our Application</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Style for the star rating system */
+        .star-rating {
+            direction: rtl;
+            display: inline-flex;
+            font-size: 1.5em;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .star-rating input {
+            display: none;
+        }
+        .star-rating label {
+            color: #ccc;
+            cursor: pointer;
+            font-size: 1.0em;
+            transition: color 0.2s;
+        }
+        .star-rating label:before {
+            content: "★";
+        }
+        .star-rating input:checked ~ label {
+            color: #FFD700;  /* Gold color for selected stars */
+        }
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #FFD700;  /* Highlight stars on hover */
+        }
+
+        /* Responsive layout adjustments */
+        @media (max-width: 576px) {
+            .container {
+                padding: 20px;
+                font-size: 0.9em;
+            }
+            .star-rating {
+                font-size: 2em;
+            }
+        }
+
+        .link-centered
+        {
+            width:100%%; /*use your preferred width*/
+            margin-left:auto;
+            margin-right:auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h3 class="text-center">Thank you for your feedback!</h3>
+    <p class="text-center">Please take a moment to rate your experience using our application.</p>
+    <hr>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        
+        <!-- Centered star rating system with 5 stars only -->
+        <div class="form-group text-center">
+            <label for="rating" class="font-weight-bold">Rate your experience (number of stars)</label>
+            <br>
+            <div class="star-rating">
+                {% for i in "54321" %}
+                    <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if form.rating.value == i %}checked{% endif %}>
+                    <label for="star{{ i }}">&#9733;</label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Optional comments section -->
+        <div class="form-group">
+            <label for="comments" class="font-weight-bold">Comments (optional):</label>
+            {{ form.comments }}
+        </div>
+
+        <!-- Submit button -->
+        <button type="submit" class="btn btn-success btn-block">Submit Rating</button>
+        <a href="{% url "home:survey_success" %}" class="btn btn-outline-info btn-block">No, thank you</a>
+    </form>
+</div>
+
+</body>
+</html>

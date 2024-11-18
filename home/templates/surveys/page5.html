@@ -1,0 +1,55 @@
+{% extends "survey_base.html" %}
+{% block content %}
+    <h4 class="text-center">Step 5 of 5 - Summary</h4>
+   
+    <p class="text-center text-muted">Please review your responses before submitting.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ wizard.management_form }}
+
+        <!-- Summary Table -->
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tbody>
+                    <!-- Display data from Page 1 -->
+                    {% for field, value in wizard.get_cleaned_data_for_step('page1').items %}
+                    <tr>
+                        <th>{{ field.label }}</th>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Display data from Page 2 -->
+                    {% for field, value in wizard.get_cleaned_data_for_step('page2').items %}
+                    <tr>
+                        <th>{{ field.label }}</th>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Display data from Page 3 -->
+                    {% for field, value in wizard.get_cleaned_data_for_step('page3').items %}
+                    <tr>
+                        <th>{{ field.label }}</th>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Display data from Page 4 -->
+                    {% for field, value in wizard.get_cleaned_data_for_step('page4').items %}
+                    <tr>
+                        <th>{{ field.label }}</th>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="button" onclick="history.back()" class="btn btn-secondary">Back</button>
+            <button type="submit" class="btn btn-success">Submit</button>
+        </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% load crispy_forms_tags %}
+
+<form method="post" hx-post="{% if form.instance.pk %}{% url 'home:question_update' form.instance.pk %}{% else %}{% url 'home:question_create' %}{% endif %}" hx-target="{% if form.instance.pk %}#question-{{ form.instance.pk }}{% else %}#question-list{% endif %}" hx-swap="{% if form.instance.pk %}outerHTML{% else %}beforeend{% endif %}">
+    {% csrf_token %}
+        <div class="form-group col-md-6 mb-0">
+            {{ form.question_id|as_crispy_field }}
+        </div>
+        <div class="form-group col-md-12 mb-0">
+            {{ form.question_question|as_crispy_field }}
+        </div>
+        <div class="form-group col-md-8 mb-0">
+            {{ form.question_type|as_crispy_field }}
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-success">Save changes</button>
+      </div>
+</form>

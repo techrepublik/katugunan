@@ -1,0 +1,45 @@
+<h2>Department List</h2>
+<button class="btn btn-success mb-3" hx-get="{% url 'home:department_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#departmentModal">Add New Department</button>
+
+<table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" id="department-table">
+    <thead>
+        <tr>
+            <th>Department Name</th>
+            <th>Department Short</th>
+            <th>Unit/College</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="department-list">
+        {% for department in departments %}
+            {% include "departments/department_row.html" %}
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Notification area -->
+<div id="notification" class="alert alert-success" style="display: none;"></div>
+
+<!-- Modal Structure -->
+<div class="modal fade" id="departmentModal" tabindex="-1" role="dialog" aria-labelledby="departmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="departmentModalLabel">Department Form</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#department-table').DataTable(); // Initialize DataTables
+    });
+
+</script>

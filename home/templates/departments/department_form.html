@@ -1,0 +1,52 @@
+{% load crispy_forms_tags %}
+
+<form method="post" hx-post="{% if form.instance.pk %}{% url 'home:department_update' form.instance.pk %}{% else %}{% url 'home:department_create' %}{% endif %}" 
+    hx-target="{% if form.instance.pk %}#department-{{ form.instance.pk }}{% else %}#department-list{% endif %}" 
+    hx-swap="{% if form.instance.pk %}outerHTML{% else %}beforeend{% endif %}"
+    hx-trigger="submit" hx-on="htmx:afterRequest: handleFormResponse">
+
+    {% csrf_token %}
+ 
+        <div class="form-group col-md-12 mb-0">
+            {{ form.department_name|as_crispy_field }}
+        </div>
+        <div class="form-group col-md-6 mb-0">
+            {{ form.department_short_name|as_crispy_field }}
+        </div>
+        <div class="form-group col-md-6 mb-0">
+            {{ form.unit_id|as_crispy_field }}
+        </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-success">Save changes</button>
+      </div>
+</form>
+
+<script>
+    function handleFormResponse(event) {
+        // Check if the response contains a success message
+        // const response = JSON.parse(event.detail.xhr.responseText);
+        // if (response.success) {
+            // Display the notification with the message
+        /**    const notification = document.getElementById("notification");
+            notification.innerText = response.message;
+            notification.style.display = "block";
+
+            // Hide the notification after a few seconds
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 3000);
+
+            // Close the modal
+            $('#departmentModal').modal('hide');
+
+            // Optionally, reload the department list if necessary
+            // htmx.ajax('GET', '{% url "home:department_list" %}', {target: '#content', swap: 'innerHTML'});
+        */
+        alert("ok");
+        $('#departmentModal').modal('hide');
+        } 
+
+</script>
+

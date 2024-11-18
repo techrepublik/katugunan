@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Wizard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Full-screen container */
+        .wizard-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        
+        /* Centered content */
+        .wizard-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Wizard box styling */
+        .wizard-box {
+            width: 100%;
+            max-width: 800px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        /* Header and Footer styling */
+        .wizard-header, .wizard-footer {
+            background-color: #343a40;
+            color: #ffffff;
+            padding: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="wizard-container">
+        <!-- Header -->
+        <header class="wizard-header">
+            <h2>Survey Form Wizard</h2>
+        </header>
+
+        <!-- Centered Content -->
+        <div class="wizard-content">
+            
+            <div class="wizard-box">
+                <h4 class="text-center">Survey for {{ user.username }}</h4>
+                {% if user.picture %}
+                    <div class="text-center mb-3">
+                        <img src="{{ user.picture.url }}" alt="{{ user.username }}'s picture" class="rounded-circle" width="100">
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="wizard-footer">
+            <p>&copy; 2024 Your Company. All Rights Reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Bootstrap and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const t9Checkbox = document.querySelector('input[name="t9"]');
+            const othersField = document.querySelector('input[name="others"]');
+            
+            t9Checkbox.addEventListener("change", function() {
+                othersField.disabled = !t9Checkbox.checked;
+            });
+        });
+        </script>
+</body>
+</html>

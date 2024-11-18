@@ -1,0 +1,64 @@
+<!-- templates/users/user_list.html -->
+<h2>User List</h2>
+<a href="{% url 'home:user_create' %}" hx-get="{% url 'home:user_create' %}" hx-target="#content-area" class="btn btn-success mb-3">Add New User</a>
+
+<table id="user-table" class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" style="width:100%">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Full Name</th>
+            <th>Department</th>
+            <th>Sex</th>
+            <th>Active</th>
+            <th>Picture</th>
+            <th>Qrcode</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr id="user-{{user.id}}">
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.first_name }} {{ user.last_name }}</td>
+            <td>{{ user.department.department_short_name }}</td>
+            <td>{{ user.sex }}</td>
+            <td>
+                {% if user.is_active %}
+                    Active
+                {% else %}
+                    Inactive
+                {% endif %}
+            </td>
+            <td>
+                {% if user.picture %}
+                    <img src="{{ user.picture.url }}" alt="Profile picture" width="50">
+                {% else %}
+                    No Picture
+                {% endif %}
+            </td>
+            <td>
+               {{user.user_id}}
+            </td>
+            <td>
+                <a href="#" hx-get="{% url 'home:user_update' user.pk %}" hx-target="#content-area" class="btn btn-warning btn-sm">Edit</a>
+                <button class="btn btn-danger btn-sm" 
+                        hx-delete="{% url 'home:user_delete' user.pk %}" 
+                        hx-target="#user-{{ user.pk }}" 
+                        hx-swap="outerHTML"
+                        hx-confirm="Are you sure to delete this record?">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function() {
+        $('#user-table').DataTable(); // Initialize DataTables
+    });   
+</script>
+

@@ -1,0 +1,76 @@
+{% extends "survey_base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <h4 class="text-center">Step 3 of 5</h4>
+    
+    <p class="text-center text-muted">Rate the following statements:</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ wizard.management_form }}
+
+        <table class="table table-borderless">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Question</th>
+                    <th class="text-center" colspan="6">Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in form %}
+                <tr>
+                    <td>{{ field.label }}</td>
+                    <td class="text-center">
+                        <label style="font-size: 2em;">
+                            <input type="radio" name="{{ field.name }}" value="1" 
+                                {% if field.value == "1" %}checked{% endif %}>
+                            😠
+                        </label>
+                    </td>
+                    <td class="text-center">
+                        <label style="font-size: 2em;">
+                            <input type="radio" name="{{ field.name }}" value="2" 
+                                {% if field.value == "2" %}checked{% endif %}>
+                            😟
+                        </label>
+                    </td>
+                    <td class="text-center">
+                        <label style="font-size: 2em;">
+                            <input type="radio" name="{{ field.name }}" value="3" 
+                                {% if field.value == "3" %}checked{% endif %}>
+                            😐
+                        </label>
+                    </td>
+                    <td class="text-center">
+                        <label style="font-size: 2em;">
+                            <input type="radio" name="{{ field.name }}" value="4" 
+                                {% if field.value == "4" %}checked{% endif %}>
+                            😊
+                        </label>
+                    </td>
+                    <td class="text-center">
+                        <label style="font-size: 2em;">
+                            <input type="radio" name="{{ field.name }}" value="5" 
+                                {% if field.value == "5" %}checked{% endif %}>
+                            😍
+                        </label>
+                    </td>
+                    <td class="text-center">
+                        <label style="font-size: 2em;">
+                            <input type="radio" name="{{ field.name }}" value="0" 
+                                {% if field.value == "0" %}checked{% endif %}>
+                            N/A
+                        </label>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="text-center mt-4">
+            <button type="button" onclick="history.back()" class="btn btn-secondary">Back</button>
+            <button type="submit" name="wizard_next_step" class="btn btn-primary">Next</button>
+        </div>
+    </form>
+{% endblock %}

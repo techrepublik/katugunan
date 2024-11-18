@@ -1,0 +1,44 @@
+
+<h2>Unit List</h2>
+<button class="btn btn-success mb-3" hx-get="{% url "home:unit_create" %}" hx-trigger="click" hx-target="#modal-body" data-toggle="modal" data-target="#unitModal">Add New Unit</button>
+
+<table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" id="unit-table">
+    <thead>
+        <tr>
+            <th>Unit Name</th>
+            <th>Unit Short</th>
+            <th>Unit Type</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="unit-list">
+        {% for unit in units %}
+            {% include "units/unit_row.html" %}
+        {% endfor %}
+    </tbody>
+</table>
+<!-- Modal Structure for CRUD Operations -->
+<div class="modal fade" id="unitModal" tabindex="-1" role="dialog" aria-labelledby="unitModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="unitModalLabel">Unit Form</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+</div> 
+
+<script>
+    
+    $(document).ready(function() {
+        $('#unit-table').DataTable(); // Initialize DataTables
+    });
+
+   
+</script>

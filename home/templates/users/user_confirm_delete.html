@@ -1,0 +1,8 @@
+<!-- templates/users/user_confirm_delete.html -->
+<h2>Confirm Delete</h2>
+<p>Are you sure you want to delete {{ user.username }}?</p>
+<form method="post" hx-post="{% url 'home:user_delete' user.pk %}" hx-target="#content-area" hx-swap="innerHTML">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Confirm</button>
+    <a href="{% url 'home:user_list' %}" hx-get="{% url 'home:user_list' %}" hx-target="#content-area" class="btn btn-secondary">Cancel</a>
+</form>

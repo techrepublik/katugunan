@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Add in your base.html or the specific template where needed -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    
+
+    <style>
+        /* Custom theme colors */
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #198754; }
+        .navbar-light .navbar-brand, .navbar-light .nav-link, .navbar-light .dropdown-item {
+            color: #FFD700; /* Gold */
+        }
+        .navbar-light .navbar-brand:hover, .navbar-light .nav-link:hover, .navbar-light .dropdown-item:hover {
+            color: #DAA520; /* Goldenrod */
+        }
+        .dropdown-menu {
+            background-color: #0A6515; /* Bootstrap's bg-secondary green */
+        }
+        /* Base style for the loader */
+        .line-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px; /* Adjust the height as needed */
+            background: linear-gradient(to right, #FFD700, #FFFFFF); /* Gold to white gradient */
+            z-index: 1000;
+            transform: scaleX(0); /* Start with no width */
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        /* Animation class for progress */
+        .loading-progress {
+            transform: scaleX(1); /* Expand to full width */
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        {% include 'sidebar.html' %}
+    
+        <div id="line-loader" class="line-loader" style="display: none;"></div>   
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper" class="w-100">
+            {% include 'navigation_bar.html' %}
+            <div class="container-fluid py-4" id="content-area">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+
+     <script>
+        $(document).ready(function() {
+            $('#unit-table').DataTable; // Initialize DataTables
+        });
+
+        document.addEventListener("htmx:configRequest", function(event) {
+            // Show and start the loader animation when a request starts
+            const loader = document.getElementById("line-loader");
+            loader.style.display = "block"; // Make the loader visible
+            loader.classList.add("loading-progress"); // Start the loading animation
+        });
+    
+        document.addEventListener("htmx:afterSwap", function(event) {
+            // Hide the loader after the content has been swapped
+            const loader = document.getElementById("line-loader");
+            loader.classList.remove("loading-progress"); // Reset the loading animation
+            setTimeout(() => { loader.style.display = "none"; }, 400); // Hide after animation
+        });
+    
+        document.addEventListener("htmx:afterRequest", function(event) {
+            // Ensure the loader is hidden even if no content was swapped
+            const loader = document.getElementById("line-loader");
+            loader.classList.remove("loading-progress");
+            setTimeout(() => { loader.style.display = "none"; }, 400);
+        });
+
+        // Get CSRF token from Django cookie
+        function getCSRFToken() {
+            const name = 'csrftoken';
+            const cookieValue = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+            return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : '';
+        }
+
+        // Set up HTMX to add CSRF token to each request
+        document.addEventListener("htmx:configRequest", (event) => {
+            event.detail.headers['X-CSRFToken'] = getCSRFToken();
+        });
+    </script>
+     
+</body>
+</html>

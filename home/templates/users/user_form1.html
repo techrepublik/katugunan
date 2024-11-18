@@ -1,0 +1,59 @@
+{% load crispy_forms_tags %}
+
+<form method="post" enctype="multipart/form-data"
+    hx-post="{% if form.instance.pk %}{% url 'home:user_update' form.instance.pk %}{% else %}{% url 'home:user_create' %}{% endif %}" 
+    hx-target="{% if form.instance.pk %}#user-{{ form.instance.pk }}{% else %}#user-list{% endif %}" 
+    hx-swap="{% if form.instance.pk %}outerHTML{% else %}beforeend{% endif %}"
+    hx-encoding="multipart/form-data">
+
+    {% csrf_token %}
+        <div class="col-md-6 mb-0">
+            {{ form.username|as_crispy_field }}
+        </div>
+        <div class="col-md-6 mb-0">
+            {{ form.email|as_crispy_field }}
+        </div>
+        <div class="col-md-6 mb-0">
+            {{ form.password|as_crispy_field }}
+        </div>
+        <div class="col-md-6 mb-0">
+            {{ form.confirm_password|as_crispy_field }}
+        </div>
+        <hr />
+        <div class="col-md-6 mb-0">
+            {{ form.id_number|as_crispy_field }}
+        </div>
+        <div class="form-row">
+            <div class="col-md-4 mb-0">
+                {{ form.first_name|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-0">
+                {{ form.middle_name|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-0">
+                {{ form.last_name|as_crispy_field }}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-4 mb-0">
+                {{ form.birth_date|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-0">
+                {{ form.contact_no|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-0">
+                {{ form.sex|as_crispy_field }}
+            </div>
+        </div>
+        <div class="col-md-12 mb-0">
+            {{ form.department|as_crispy_field }}
+        </div>
+        <div class="col-md-12 mb-0">
+            {{ form.picture|as_crispy_field }}
+        </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-success">Save changes</button>
+    </div>
+</form>

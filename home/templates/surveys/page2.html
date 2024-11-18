@@ -1,0 +1,18 @@
+{% extends "survey_base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <h4 class="text-center">Step 2 of 5</h4>
+    
+    <p class="text-center text-muted">Please provide your preferences</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ wizard.management_form }}
+        {{ form|crispy }}
+
+        <div class="text-center mt-4">
+            <button type="button" onclick="history.back()" class="btn btn-secondary">Back</button>
+            <button type="submit" name="wizard_next_step" class="btn btn-primary">Next</button>
+        </div>
+    </form>
+{% endblock %}

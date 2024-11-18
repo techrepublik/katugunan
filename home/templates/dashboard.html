@@ -1,0 +1,831 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+
+<style>
+    .loading-spinner {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        height: 100px;
+    }
+  
+    .loading-spinner div {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4CAF50;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+  
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<h3 class="mb-3">Dashboard Overview</h3>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <span class="w-auto"></span> 
+    <span class="ms-auto"></span>
+    <select id="yearSelectRegion" class="form-control w-auto" 
+            name="year_dashboard"
+            hx-get="{% url 'home:populate_dashboard'%}" 
+            hx-target="#regionChart"
+            hx-include="[name='year_dashboard']"
+            hx-trigger="change from:#yearSelectRegion changed delay:100ms">
+        <option value="" selected>Select Year</option>
+        {% for year in years %}
+            <option value="{{ year.year }}">{{ year.year }}</option>
+        {% endfor %}
+    </select>
+    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto" hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change" hx-include="[name='year_bar']">
+        <option value="">All years</option>
+    </select> {% endcomment %}
+</div>
+
+<div class="row mb-2">
+    <!-- Summary Cards -->
+    <div class="col-md-2">
+        <div class="card text-white text-center bg-success mb-3">
+            <div class="card-header">TOTAL SURVEY</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <h3>{{ total_surveys }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center bg-success mb-3">
+            <div class="card-header">AVERAGE RATING</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <h3>{{ average_rating|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div> 
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center bg-success mb-3">
+            <div class="card-header">AVERAGE RATING</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <h3>{{ average_rating|floatformat:1 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center bg-success mb-3">
+            <div class="card-header">AVERAGE RATING</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <h3>{{ average_rating|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center bg-success mb-3">
+            <div class="card-header">AVERAGE RATING</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <h3>{{ average_rating|floatformat:1 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center bg-success mb-3">
+            <div class="card-header">AVERAGE RATING</div>
+            <div class="card-body">
+                <div class="card-text">
+                    <h3>{{ average_rating|floatformat:1 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-md-6">
+        <div class="card mb-2">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Survey Distribution by Region</span> 
+                    <span class="ms-auto"></span>
+                    <select id="yearSelectRegion" class="form-control w-auto" 
+                            name="year_region"
+                            hx-get="{% url 'home:populate_region'%}" 
+                            hx-target="#regionChart"
+                            hx-include="[name='year_region']"
+                            hx-trigger="change from:#yearSelectRegion changed delay:100ms">
+                        <option value="" selected>Select Year</option>
+                        {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                        {% endfor %}
+                    </select>
+                    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto" hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change" hx-include="[name='year_bar']">
+                        <option value="">All years</option>
+                    </select> {% endcomment %}
+                </div>
+            </div>
+            <div class="card-body" id="regionBarChart">
+                <div class="loading-spinner" id="loadingSpinnerRegion">
+                    <div></div>
+                </div>
+                <canvas id="regionChart"></canvas>
+                {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-2">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Employment Status Bar Chart</span> 
+                    <span class="ms-auto"></span> 
+                    {% comment %} <a href="{% url 'home:generate_status_chart_pdf' %}" class="btn btn-sm btn-warning w-auto">Report (Pdf)</a> {% endcomment %}
+                    <select id="yearSelect" class="form-control w-auto" 
+                            name="year_citizen"
+                            hx-get="{% url 'home:citizen_chart_data'%}" 
+                            hx-target="#citizenContainer"
+                            hx-include="[name='year_citizen']"
+                            hx-trigger="change from:#yearSelect changed delay:100ms">
+                        <option value="" selected>Select Year</option>
+                        {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                        {% endfor %}
+                    </select>
+                    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto" hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change" hx-include="[name='year_bar']">
+                        <option value="">All years</option>
+                    </select> {% endcomment %}
+                </div>
+            </div>
+            <div class="card-body" id="citizenBarChart">
+                <div class="loading-spinner" id="loadingSpinnerCitizen">
+                    <div></div>
+                </div>
+                <canvas id="citizenContainer"></canvas>
+                {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-md-12">
+        <div class="card mb-2">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Survey Distribution by Citizen Charter</span> 
+                    <span class="ms-auto"></span>
+                    <select id="yearSelectCitizenCharter" class="form-control w-auto" 
+                            name="year_citizen_charter"
+                            hx-get="{% url 'home:populate_citizen_charter'%}" 
+                            hx-target="#chartSection"
+                            hx-include="[name='year_citizen_charter']"
+                            hx-trigger="change from:#yearSelectCitizenCharter changed delay:100ms">
+                        <option value="" selected>Select Year</option>
+                        {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                        {% endfor %}
+                    </select>
+                    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto" hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change" hx-include="[name='year_bar']">
+                        <option value="">All years</option>
+                    </select> {% endcomment %}
+                </div>
+            </div>
+            <div class="card-body" id="citizenCharterBarChart">
+                <div class="loading-spinner" id="loadingSpinnerCitizenCharter">
+                    <div></div>
+                </div>
+                <div id="chartSection">
+                    <div class="chart-container">
+                        <h6>CC1: Awareness of CC</h6>
+                        <canvas id="cc1ChartContainer"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h6>CC2: Visibility of CC</h6>
+                        <canvas id="cc2Chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h6>CC3: Effectiveness of CC</h6>
+                        <canvas id="cc3Chart"></canvas>
+                    </div>
+                </div>
+                {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <!-- Transaction Types Chart -->
+    <div class="col-md-8">
+        <div class="card mb-2">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Transactions Distribution</span> 
+                    <span class="ms-auto"></span>
+                    {% comment %} <a href="{% url 'home:generate_status_chart_pdf' %}" class="btn btn-sm btn-warning w-auto">Report (Pdf)</a> {% endcomment %}
+                    <select id="yearSelectTransaction" class="form-control w-auto" 
+                            name="year_transaction"
+                            hx-get="{% url 'home:populate_dashboard'%}" 
+                            hx-target="#transactionChart"
+                            hx-include="[name='year_transaction']"
+                            hx-trigger="change from:#yearSelectTransaction changed delay:100ms">
+                        <option value="" selected>Select Year</option>
+                        {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                        {% endfor %}
+                    </select>
+                    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto" hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change" hx-include="[name='year_bar']">
+                        <option value="">All years</option>
+                    </select> {% endcomment %}
+                </div>
+            </div>
+            <div class="card-body" id="transactionBarChart">
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div></div>
+                </div>
+                <canvas id="transactionChart"></canvas>
+                {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Transaction Types Chart -->
+    <div class="col-md-4">
+        <div class="card mb-2">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Sex Distribution</span> 
+                    <span class="ms-auto"></span>
+                    {% comment %} <a href="{% url 'home:generate_status_chart_pdf' %}" class="btn btn-sm btn-warning w-auto">Report (Pdf)</a> {% endcomment %}
+                    <select id="yearSelectDashBoard" class="form-control w-auto" 
+                            name="year_dashboard"
+                            hx-get="{% url 'home:citizen_chart_data'%}" 
+                            hx-target="#genderPieChart"
+                            hx-include="[name='year_dashboard']"
+                            hx-trigger="change from:#yearSelectDashboard changed delay:100ms">
+                        <option value="" selected>Select Year</option>
+                        {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                        {% endfor %}
+                    </select>
+                    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto" hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change" hx-include="[name='year_bar']">
+                        <option value="">All years</option>
+                    </select> {% endcomment %}
+                </div>
+            </div>
+            <div class="card-body" id="citizenBarChart">
+                <canvas id="genderPieChart" width="400" height="200"></canvas>
+                {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-md-12">
+        <div class="card mb-2">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Service Quality Dimensions (SQD) Summary</span> 
+                    <span class="ms-auto"></span>
+                    <select id="yearSelectSGD" class="form-control w-auto" 
+                            name="year_sgd"
+                            hx-get="{% url 'home:populate_sgd'%}" 
+                            hx-target="#sqdChart"
+                            hx-include="[name='year_sgd']"
+                            hx-trigger="change from:#yearSelectSGD changed delay:100ms">
+                        <option value="" selected>Select Year</option>
+                        {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                        {% endfor %}
+                    </select>
+                    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto" hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change" hx-include="[name='year_bar']">
+                        <option value="">All years</option>
+                    </select> {% endcomment %}
+                </div>
+            </div>
+            <div class="card-body" id="sgdBarChart">
+                <div class="loading-spinner" id="loadingSpinnerCitizenCharter">
+                    <div></div>
+                </div>
+                <div id="sqdChartContainer" style="position: relative; height: 40vh; width: 80vw;">
+                    <canvas id="sqdChart"></canvas>
+                </div>
+                {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Surveys Table -->
+<div class="dashboard-section">
+    <h6>Recent Surveys</h6>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Region</th>
+                <th>Rating</th>
+                <th>Submitted At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for survey in recent_surveys %}
+                <tr>
+                    <td>{{ survey.client_name }}</td>
+                    <td>{{ survey.region }}</td>
+                    <td>{{ survey.rating }}</td>
+                    <td>{{ survey.created_at|date:"Y-m-d H:i" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4" class="text-center">No recent surveys available</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Key Metrics Section -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">Total Surveys</div>
+            <div class="card-body">
+                <h5>150</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">Responses</div>
+            <div class="card-body">
+                <h5>2500</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">Active Users</div>
+            <div class="card-body">
+                <h5>120</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Section (Placeholder) -->
+<div class="card mb-4">
+    <div class="card-header">Survey Responses Over Time</div>
+    <div class="card-body">
+        <canvas id="surveyChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<!-- Recent Feedback Table -->
+<div class="card mb-4">
+    <div class="card-header">Recent Feedback</div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Rating</th>
+                    <th>Comment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2024-10-25</td>
+                    <td>John Doe</td>
+                    <td>⭐⭐⭐⭐⭐</td>
+                    <td>Great service!</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var ctx = document.getElementById('surveyChart').getContext('2d');
+    var surveyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            datasets: [{
+                label: 'Responses',
+                data: [10, 50, 30, 70, 90],
+                borderColor: '#28a745',
+                fill: false
+            }]
+        }
+    });
+
+    // Initialize the chart with empty data
+    let regionChart;
+    function renderRegionChart(labels = [], data = []) {
+        const ctx = document.getElementById('regionChart').getContext('2d');
+        
+        if (regionChart) {
+            regionChart.destroy(); // Destroy existing chart instance if it exists
+        }
+
+        // Show loading spinner
+        document.getElementById('loadingSpinnerRegion').style.display = 'flex';
+        document.getElementById('regionChart').style.display = 'none';
+
+        setTimeout(() => {
+
+            // Hide loading spinner and show chart
+            document.getElementById('loadingSpinnerRegion').style.display = 'none';
+            document.getElementById('regionChart').style.display = 'block';
+
+            regionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Survey by Region',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Survey Count' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Region' }
+                        }
+                    }
+                }
+            });
+        }, 1000);
+    }
+
+    /*
+    // Data for the regional distribution chart
+    const ctx01 = document.getElementById('regionChart').getContext('2d');
+    const regionData = {
+        labels: [{% for item in survey_by_region %}'{{ item.region }}',{% endfor %}],
+        datasets: [{
+            label: 'Surveys by Region',
+            data: [{% for item in survey_by_region %}{{ item.total }},{% endfor %}],
+            backgroundColor: ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8'],
+        }]
+    };
+    const regionChart = new Chart(ctx01, {
+        type: 'bar',
+        data: regionData,
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+    */
+
+    // Data for transaction types chart
+    let transctionChart;
+    function renderTransactionChart(data) {
+        myData = JSON.parse(data);
+        const labels = Object.keys(myData.transaction_counts);
+        const counts = Object.values(myData.transaction_counts);
+
+        const transactionCtx = document.getElementById('transactionChart').getContext('2d');
+
+        // if (transactionChart) {
+        //    transactionChart.destroy(); // Destroy existing chart instance if it exists
+        // }
+        
+        // Show loading spinner
+        document.getElementById('loadingSpinner').style.display = 'flex';
+        document.getElementById('transactionChart').style.display = 'none';
+
+        // Simulate data processing delay
+        setTimeout(() => {
+            // Hide loading spinner and show chart
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('transactionChart').style.display = 'block';
+
+            // Chart configuration
+            const transactionData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Transaction Types',
+                    data: counts,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            // Create chart instance
+            transactionChart = new Chart(transactionCtx, {
+                type: 'bar',
+                data: transactionData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Transactions' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Transaction Type' }
+                        }
+                    }
+                }
+            });
+        }, 1000); // Simulate 1-second loading delay
+    }
+
+    /*
+    // Gender data from the view context
+    const maleCount = {{ male_count }};
+    const femaleCount = {{ female_count }};
+    
+    const ctx2 = document.getElementById('genderPieChart').getContext('2d');
+    const genderPieChart = new Chart(ctx2, {
+        type: 'pie',
+        data: {
+            labels: ['Male', 'Female'],
+            datasets: [{
+                data: [maleCount, femaleCount],
+                backgroundColor: ['#36A2EB', '#FF6384'],  // Customize colors as needed
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = maleCount + femaleCount;
+                            const percentage = ((context.raw / total) * 100).toFixed(2);
+                            return `${context.label}: ${percentage}% (${context.raw})`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    */
+
+    // Initialize chart variable outside to update dynamically
+    // let citizenChart = null;
+
+    // Function to render or update the Chart.js chart
+    function renderCitizenCharterChart(data) {
+        //alert(data);
+        const ctx3 = document.getElementById('citizenContainer').getContext('2d');
+
+        // Show loading spinner
+        document.getElementById('loadingSpinnerCitizen').style.display = 'flex';
+        document.getElementById('citizenContainer').style.display = 'none';
+
+        // Simulate data processing delay
+        setTimeout(() => {
+            // Hide loading spinner and show chart
+            document.getElementById('loadingSpinnerCitizen').style.display = 'none';
+            document.getElementById('citizenContainer').style.display = 'block';
+
+            myData = JSON.parse(data);
+            const labels = myData.labels || [];
+            const cc1Data = myData.cc1_counts || [];
+            const cc2Data = myData.cc2_counts || [];
+            const cc3Data = myData.cc3_counts || [];
+
+            // Destroy previous chart instance if it exists
+            //if (citizenChart) {
+            //    citizenChart.destroy();
+            //}
+            
+
+            citizenChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ["Choice 1", "Choice 2", "Choice 3", "Choice 4"],
+                    datasets: [
+                        {
+                            label: 'CC1 Responses',
+                            data: cc1Data,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'CC2 Responses',
+                            data: cc2Data,
+                            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'CC3 Responses',
+                            data: cc3Data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: 'Choices' }},
+                        y: { beginAtZero: true, title: { display: true, text: 'Count' }}
+                    }
+                }
+            });
+        }, 1000);
+    }
+
+
+    function renderSDGChart(data) {
+        const ctxSGD = document.getElementById('sqdChart').getContext('2d');
+        new Chart(ctxSGD, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Service Quality Dimensions (SQD) Responses',
+                    data: data.data,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Responses'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Satisfaction Levels'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize empty chart variables
+    let cc1Chart, cc2Chart, cc3Chart;
+
+    function renderCitizenChart(chartId, labels, data, title) {
+
+        const ctx4 = document.getElementById('cc1ChartContainer').getContext('2d');
+
+        // Show loading spinner
+        // document.getElementById('loadingSpinnerCitizen').style.display = 'flex';
+        // document.getElementById('citizenContainer').style.display = 'none';
+
+        // Simulate data processing delay
+        setTimeout(() => {
+            // Hide loading spinner and show chart
+            // document.getElementById('loadingSpinnerCitizen').style.display = 'none';
+            // document.getElementById('citizenContainer').style.display = 'block';
+
+            // myData = JSON.parse(data);
+            // const labels = myData.labels || [];
+            // const cc1Data = myData.cc1_counts || [];
+            // const cc2Data = myData.cc2_counts || [];
+            // const cc3Data = myData.cc3_counts || [];
+
+            //if (citizenChart) {
+            //    citizenChart.destroy();
+            //}
+            
+
+            chartChart = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: title,
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Count' }
+                        },
+                        x: {
+                            title: { display: true, text: title }
+                        }
+                    }
+                }
+            });
+        }, 1000);
+
+        /*
+        const ctxCitizen = document.getElementById('cc1Chart');
+        console.log(ctxCitizen);
+        if (ctxCitizen) {
+            const chartContext = ctxCitizen.getContext('2d');
+            if (window['cc1Chart']) window['cc1Chart'].destroy(); // Destroy existing chart instance if it exists
+
+            window[chartId] = new Chart(chartContext, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: title,
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Count' }
+                        },
+                        x: {
+                            title: { display: true, text: title }
+                        }
+                    }
+                }
+            });
+            
+        }
+        */
+    }
+
+
+    // Event listener to handle HTMX response for the chart
+    document.addEventListener('htmx:afterOnLoad', (event) => {
+        const responseData = event.detail.xhr.response;
+        // renderRegion(responseData);
+        
+        if (event.detail.target.id==="transactionChart") {
+            renderTransactionChart(responseData);
+        }
+        else if (event.detail.target.id==="citizenContainer"){
+            renderCitizenCharterChart(responseData);
+        }
+        else if (event.detail.target.id==="regionChart"){
+            const data = JSON.parse(event.detail.xhr.responseText);
+            const labels = data.survey_by_region.map(item => item.region);
+            const values = data.survey_by_region.map(item => item.total);
+            renderRegionChart(labels, values);
+        }
+        else if (event.detail.target.id==="chartSection") {
+            const data = JSON.parse(event.detail.xhr.responseText);
+            alert(data);
+
+            /// Ensure the elements are available before rendering
+            setTimeout(() => {
+                // Render CC1 chart
+                renderCitizenChart("cc1Chart", data.cc1.labels, data.cc1.data, "CC1: Awareness of CC");
+
+                // Render CC2 chart
+                renderCitizenChart("cc2Chart", data.cc2.labels, data.cc2.data, "CC2: Visibility of CC");
+
+                // Render CC3 chart
+                renderCitizenChart("cc3Chart", data.cc3.labels, data.cc3.data, "CC3: Effectiveness of CC");
+            }, 100); // Small delay to ensure elements are in DOM
+        }
+        else if ( event.detail.target.id==="sgdBarChart") {
+            const data = JSON.parse(event.detail.xhr.responseText);
+            console.log(data);
+            renderSDGChart(data);
+        }
+    });
+</script>
+{% endblock %}

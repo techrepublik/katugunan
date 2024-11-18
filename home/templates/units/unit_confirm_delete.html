@@ -1,0 +1,6 @@
+<form method="post" hx-delete="{% url 'unit_delete' unit.pk %}" hx-target="#unit-{{ unit.id }}" hx-swap="outerHTML">
+    {% csrf_token %}
+    <p>Are you sure you want to delete "{{ unit.unit_name }}"?</p>
+    <button type="submit" class="btn btn-danger">Confirm</button>
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+</form>

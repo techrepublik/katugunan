@@ -1,0 +1,9 @@
+<tr id="user-{{ user.pk }}">
+    <td>{{ user.username }}</td>
+    <td>{{ user.email }}</td>
+    <td>{{ user.first_name }} {{ user.last_name }}</td>
+    <td>
+        <button class="btn btn-warning btn-sm" hx-get="{% url 'home:user_update' user.pk %}" hx-target="#modal-body" data-toggle="modal" data-target="#userModal">Edit</button>
+        <button class="btn btn-danger btn-sm" hx-get="{% url 'home:user_delete' user.pk %}" hx-target="#modal-body" data-toggle="modal" data-target="#userModal">Delete</button>
+    </td>
+</tr>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Submitted</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+        }
+        .thank-you-image {
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto 20px;
+        }
+        .thank-you-message {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #0A6515;
+        }
+        .emoji {
+            font-size: 5em;
+            margin-top: 20px;
+            color: #ff5e78;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Thank You Image -->
+        <img src="{% static 'usm_logo.png' %}" alt="Thank You" class="thank-you-image">
+
+        <!-- Thank You Message -->
+        <p class="thank-you-message">Thank you for completing the survey!</p>
+        <p>We appreciate your feedback and will use it to improve our services.</p>
+
+        <!-- Smiling Emoji with Heart Eyes -->
+        <div class="emoji">😍</div>
+    </div>
+
+    <!-- Add Bootstrap JavaScript if needed -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

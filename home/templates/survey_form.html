@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Satisfaction Survey Form</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0A6515;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+        .emoji-options label {
+            font-size: 1.5em;
+            margin: 0 5px;
+        }
+        /* Adjust table on smaller screens */
+        @media (max-width: 768px) {
+            .table th, .table td {
+                font-size: 0.9em;
+            }
+            .emoji-options label {
+                font-size: 1.2em;
+            }
+            .table-responsive {
+                overflow-x: auto;
+            }
+        }
+
+        /* Hide the default radio button appearance */
+        .radio-custom input[type="radio"] {
+            display: none;
+        }
+
+        /* Style the custom radio button label */
+        .radio-custom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 1.2em;
+            color: #333;
+            cursor: pointer;
+            background-color: #d3d3d3; /* Gray background initially */
+            border-radius: 5px;
+            width: 60px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Increase the emoji size */
+        .radio-custom .emoji {
+            font-size: 1.2em;
+        }
+
+        /* Change background color to #0A6515 and text color to white when selected */
+        .radio-custom input[type="radio"]:checked + .emoji,
+        .radio-custom input[type="radio"]:checked ~ span {
+            color: #fff; /* White text color on green background */
+        }
+
+        /* Highlight the entire label with #0A6515 when selected */
+        .radio-custom input[type="radio"]:checked + span,
+        .radio-custom input[type="radio"]:checked ~ .emoji {
+            background-color: #0A6515; /* Green background */
+            border-radius: 5px;
+            border-color: #DAA520;
+            border-style: solid;
+            width: 60px;
+        }
+
+        /* Hide the default radio input */
+        .form-check-input[type="radio"] {
+            display: none;
+        }
+
+        /* Style the custom radio button container */
+        .custom-radio {
+            display: flex;
+            align-items: left;
+            justify-content: left;
+            cursor: pointer;
+            color: #333;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            padding:2px;
+            text-align: left;
+            width: 100%; /* Full width for each column */
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Styling for the label text */
+        .custom-radio span {
+            display: inline-block;
+            font-size: 1.1em;
+        }
+
+        /* Hover effect */
+        .custom-radio:hover {
+            background-color: #cccccc;
+        }
+
+        /* Change background color and text color when selected */
+        .form-check-input[type="radio"]:checked + span {
+            color: white;
+            background-color: #0A6515;
+            border-radius: 2px;
+            border-color: #DAA520;
+            border-style: solid;
+            border-width: 2px;
+            display: inline-block;
+            width: 100%; 
+        }
+
+        .custom-checkbox-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .custom-checkbox {
+            display: none;
+        }
+        .custom-checkbox-label {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .custom-checkbox-label::before {
+            content: "";
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            border-radius: 50%;
+            background-color: #d3d3d3; /* Initial gray color */
+            transition: background-color 0.3s;
+        }
+        .custom-checkbox:checked + .custom-checkbox-label::before {
+            background-color: #0A6515; /* Green color when checked */
+        }
+        .custom-checkbox:checked + .custom-checkbox-label::after {
+            content: "✔";
+            position: absolute;
+            left: 6px;
+            top: 1px;
+            font-size: 16px;
+            color: #DAA520; /* White check mark */
+        }
+
+        .errorlist {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="text-center mb-2">
+        <img src="{% static 'usm_logo.png' %}" alt="Admin Logo" width="50" height="50" class="sidebar-logo">
+    </div>
+    <h5 class="text-center">University of Southern Mindanao<br>Client Satisfaction Survey Form</h5>
+    <p class="text-center font-weight-bold">Help Us Serve You Better!</p>
+    <hr>
+    {% if user.picture %}
+        <div class="text-center mb-2">
+            <img src="{{ user.picture.url }}" alt="{{ user.username }}'s picture" class="rounded-circle" width="100">
+        </div>
+    {% endif %}
+    <h5 class="text-center"><span class="text-success font-weight-bold">{{ user }}</span></h6>
+    <h6 class="text-center mb-5"><span class="text-success font-weight-bold">{{ user.department }}</span></h6>
+
+    <form method="POST">
+        {% csrf_token %}
+        <!-- Type of Client -->
+        <div class="section-title text-center">Type of Client</div>
+        <div class="form-group question-section">
+            <div class="row">
+                {% for client_type, label in form.client_type.field.choices %}
+                    <div class="col-6 col-md-3 mb-2">
+                        <label class="form-check-label custom-radio">
+                            <input class="form-check-input" type="radio" name="client_type" value="{{ client_type }}" {% if form.client_type.value == client_type %}checked{% endif %}>
+                            <span>{{ label }}</span>
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Additional Fields for Region, Sex, and Age -->
+        <div class="mt-4">
+            <label for="region" class="font-weight-bold">Region</label>
+            {{ form.region }}
+            <div class="row mt-3">
+                <div class="col-6">
+                    <label for="sex" class="font-weight-bold">Sex</label>
+                    {{ form.sex }}
+                </div>
+                <div class="col-6">
+                    <label for="age" class="font-weight-bold">Age</label>
+                    {{ form.age }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Nature of Transaction -->
+        <div class="section-title text-center mt-5">Nature of Transaction</div>
+        <div class="form-group question-section">
+            {% for transaction_type, label in form.transaction_types.field.choices %}
+                <div class="form-check">
+                    <input class="custom-checkbox" type="checkbox" name="transaction_types" value="{{ transaction_type }}" id="{{ transaction_type }}">
+                    <label class="custom-checkbox-label" for="{{ transaction_type }}">{{ label }}</label>
+                </div>
+            {% endfor %}
+            <div class="form-group mb-4">
+                {{ form.others }}
+            </div>
+            {% if form.transaction_types.errors %}
+                <ul class="errorlist">
+                    {% for error in form.transaction_types.errors %}
+                        <li >Select one transaction.</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <!-- Citizen's Charter (CC) Questions -->
+        <div class="section-title text-center mt-5">Citizen's Charter (CC) Questions</div>
+        <!-- CC1 Question -->
+        <div class="form-group question-section mb-5">
+            <label class="font-weight-bold">CC1: Which of the following best describes your awareness of CC?</label>
+            {% for choice in form.cc1.field.choices %}
+                <div class="col-12 col-md-12 mb-2">
+                    <label class="form-check-label custom-radio">
+                        <input class="form-check-input" type="radio" name="{{ form.cc1.name }}" id="{{form.cc1.name}}_{{choice.0}}" value="{{ choice.0 }}" {% if form.cc1.value == choice.0 %}checked{% endif %}>
+                        <span>{{ choice.1 }}</span>
+                    </label>
+                </div>
+            {% endfor %}
+
+            {% if form.cc1.errors %}
+                <ul class="errorlist">
+                    {% for error in form.cc1.errors %}
+                        <li>Select one from the options provided.</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        
+        <!-- CC2 Question -->
+        <div class="form-group question-section mb-5">
+            <label class="font-weight-bold">CC2: If aware of CC (answered 1-3 in CC1), would you say that the CC of this office was...?</label>
+            {% for choice in form.cc2.field.choices %}
+                <div class="col-12 col-md-12 mb-2">
+                    <label class="form-check-label custom-radio">
+                        <input class="form-check-input" type="radio" name="{{ form.cc2.name }}" id="{{form.cc2.name}}_{{choice.0}}" value="{{ choice.0 }}" {% if form.cc2.value == choice.0 %}checked{% endif %}>
+                        <span>{{ choice.1 }}</span>
+                    </label>
+                </div>
+            {% endfor %}
+            {% if form.cc2.errors %}
+                <ul class="errorlist">
+                    {% for error in form.cc2.errors %}
+                        <li>Select one from the options provided.</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div> 
+        <!-- CC3 Question -->
+        <div class="form-group question-section mb-5">
+            <label class="font-weight-bold">CC3: If aware of CC (answered 1-3 in CC1), how much did the CC help you in your transaction?</label>
+            {% for choice in form.cc3.field.choices %}
+                <div class="col-12 col-md-12 mb-2">
+                    <label class="form-check-label custom-radio">
+                        <input class="form-check-input" type="radio" name="{{ form.cc3.name }}" id="{{form.cc3.name}}_{{choice.0}}" value="{{ choice.0 }}" {% if form.cc3.value == choice.0 %}checked{% endif %}>
+                        <span>{{ choice.1 }}</span>
+                    </label>
+                </div>
+            {% endfor %}
+            {% if form.cc3.errors %}
+                <ul class="errorlist">
+                    {% for error in form.cc3.errors %}
+                        <li>Select one from the options provided.</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+
+        <!-- Service Quality (SQD) Ratings with Emojis -->
+        <div class="section-title text-center mb-3">Service Quality Ratings (SQD)</div>
+        <div class="border border-success">
+            <div class="text-center bg-success mb-2"><span class="font-weight-bold">LEGEND</span></div>
+            <!-- Legend for Emojis -->
+            <div class="d-flex justify-content-around">
+                <div class="text-center"><span style="font-size: 1.5em;">😠</span><br><small>Strongly Disagree</small></div>
+                <div class="text-center"><span style="font-size: 1.5em;">😟</span><br><small>Disagree</small></div>
+                <div class="text-center"><span style="font-size: 1.5em;">😐</span><br><small>Neither Agree nor Disagree</small></div>
+                <div class="text-center"><span style="font-size: 1.5em;">😊</span><br><small>Agree</small></div>
+                <div class="text-center"><span style="font-size: 1.5em;">😍</span><br><small>Strongly Agree</small></div>
+                <div class="text-center"><span style="font-size: 1.5em;">N/A</span><br><small>Not Applicable</small></div>
+            </div>
+        </div>
+        <hr class="mb-5">
+        
+        <!-- SQD Questions -->
+        {% comment %} {% for sqd_field in form %}
+            {% if sqd_field.name|slice:":3" == "sqd" %}
+                <div class="mb-3">
+                    <!-- Display statement for each sqd field -->
+                    <label class="font-weight-bold">{{ sqd_field.field.statement }}</label>
+                    <div class="d-flex justify-content-around emoji-options">
+                        {% for choice, display in sqd_field.field.choices %}
+                            <label class="radio-custom">
+                                <input type="radio" name="{{ sqd_field.name }}" id="{{sqd_field.name}}_{{ choice }}"  value="{{ choice }}" {% if sqd_field.value == choice %}checked{% endif %}>
+                                <span class="emoji">{{ display }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %} {% endcomment %}
+
+
+        {% for sqd_field in form %}
+            {% if sqd_field.name|slice:":3" == "sqd" %}
+                <div class="mb-5">
+                    <!-- Display statement for each SQD field -->
+                    <label class="font-weight-bold">{{ sqd_field.field.statement }}</label>
+                    <div class="d-flex justify-content-around emoji-options">
+                        {% for choice, display in sqd_field.field.choices %}
+                            <label class="radio-custom">
+                                <input type="radio" name="{{ sqd_field.name }}" id="{{ sqd_field.name }}_{{ choice }}" value="{{ choice }}" {% if sqd_field.value == choice %}checked{% endif %}>
+                                <span class="emoji">
+                                    {% if display == 'Strongly Disagree' %}😠
+                                    {% elif display == 'Disagree' %}😟
+                                    {% elif display == 'Neutral' %}😐
+                                    {% elif display == 'Agree' %}😊
+                                    {% elif display == 'Strongly Agree' %}😍
+                                    {% else %}N/A{% endif %}
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Display errors for each SQD field, if any -->
+                    {% if sqd_field.errors %}
+                        <ul class="errorlist">
+                            {% for error in sqd_field.errors %}
+                                <li>Required. Please select a response.</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <!-- Suggestions and Email Address -->
+        <div class="form-group mt-5">
+            <label for="suggestions" class="font-weight-bold">Suggestions for Improvement (optional):</label>
+            {{ form.suggestions }}
+        </div>
+        <div class="form-group mb-4">
+            <label for="email">Email Address (optional):</label>
+            {{ form.email }}
+        </div>
+
+        <!-- Hidden fields for geolocation -->
+        <input type="hidden" id="latitude" name="latitude">
+        <input type="hidden" id="longitude" name="longitude">
+
+        <!-- Submit Button -->
+        <div class="text-center mb-5">
+            <button type="submit" id="btnSubmit" class="btn btn-success btn-block p-4">Submit Survey Responses</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const otherCheckbox = document.getElementById("Other");
+        const otherDetails = document.getElementById("id_others");
+        otherDetails.style.display = "none";
+        otherCheckbox.addEventListener("change", function() {
+            if (this.checked) {
+                otherDetails.style.display = "block";
+            } else {
+                otherDetails.style.display = "none";
+            }
+        });
+
+        const cc1Option4 = document.getElementById("cc1_4");
+        const cc2Option5 = document.getElementById("cc2_5");
+        const cc3Option4 = document.getElementById("cc3_4");
+
+        // Event listener for changes to cc1_4
+        cc1Option4.addEventListener("change", function() {
+            if (cc1Option4.checked) {
+                // Select cc2_5 and cc3_4 when cc1_4 is checked
+                cc2Option5.checked = true;
+                cc3Option4.checked = true;
+            } else {
+                // Deselect cc2_5 and cc3_4 when cc1_4 is unchecked
+                cc2Option5.checked = false;
+                cc3Option4.checked = false;
+            }
+        });
+
+        // Check if geolocation is available
+        /*
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                // Set the values of the hidden fields
+                document.getElementById("latitude").value = position.coords.latitude;
+                document.getElementById("longitude").value = position.coords.longitude;
+            }, function(error) {
+                console.error("Error getting location: ", error);
+                alert("Could not retrieve location. Please enable location access.");
+            });
+        } else {
+            console.error("Geolocation is not supported by this browser.");
+            alert("Geolocation is not supported by your browser.");
+        }
+        */
+        
+
+        
+    });
+
+    /*
+    function get_geolocation(){
+        function success(position){
+            const latitude = position.coords.latitude
+            const longitude = position.coords.longitude
+
+            document.getElementById('latitude').value = latitude
+            document.getElementById('longitude').value = longitude
+
+        }
+
+        function error() {
+            console.error("Error getting location: ", error);
+            alert("Could not retrieve location. Please enable location access.");
+        }
+
+        if (!navigator.geolocation) {
+            status.textContent = "Geolocation is not supported by your browser";
+        } else {
+            status.textContent = "Locating…";
+            navigator.geolocation.getCurrentPosition(success, error);
+        }
+    }
+
+    document.querySelector("#btnSubmit").addEventListener("click", get_geolocation);
+    */
+</script>
+</body>
+</html>

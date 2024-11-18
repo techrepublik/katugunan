@@ -1,0 +1,86 @@
+<!-- templates/users/user_form.html -->
+{% load crispy_forms_tags %}
+<h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} User</h2>
+<form method="post" enctype="multipart/form-data" 
+    hx-post="{% if form.instance.pk %}{% url 'home:user_update' form.instance.pk %}{% else %}{% url 'home:user_create' %}{% endif %}" 
+    hx-target="#content-area" hx-swap="innerHTML" hx-encoding="multipart/form-data">
+    
+    {% csrf_token %}
+    <div class="col-md-6 mb-0">
+        {{ form.username|as_crispy_field }}
+    </div>
+    <div class="col-md-6 mb-0">
+        {{ form.email|as_crispy_field }}
+    </div>
+    <div class="col-md-6 mb-0">
+        {{ form.password|as_crispy_field }}
+    </div>
+    <div class="col-md-6 mb-0">
+        {{ form.confirm_password|as_crispy_field }}
+    </div>
+    <hr />
+    <div class="col-md-6 mb-0">
+        {{ form.id_number|as_crispy_field }}
+    </div>
+    <div class="form-row">
+        <div class="col-md-4 mb-0">
+            {{ form.first_name|as_crispy_field }}
+        </div>
+        <div class="col-md-4 mb-0">
+            {{ form.middle_name|as_crispy_field }}
+        </div>
+        <div class="col-md-4 mb-0">
+            {{ form.last_name|as_crispy_field }}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col-md-4 mb-0">
+            {{ form.birth_date|as_crispy_field }}
+        </div>
+        <div class="col-md-4 mb-0">
+            {{ form.contact_no|as_crispy_field }}
+        </div>
+        <div class="col-md-4 mb-0">
+            {{ form.sex|as_crispy_field }}
+        </div>
+    </div>
+    <div class="col-md-12 mb-0">
+        {{ form.department|as_crispy_field }}
+    </div>
+    <div class="form-group">
+        <label for="picture">Profile Picture</label><br>
+        
+        <!-- Display current picture if it exists -->
+        {% if user and user.picture %}
+            <img id="picture-preview" src="{{ user.picture.url }}" alt="Profile Picture" width="200" height="200">
+        {% else %}
+            <img id="picture-preview" src="" alt="Profile Picture" width="200" height="200" style="display: none;">
+        {% endif %}
+        
+        <!-- File Input -->
+        {{ form.picture }}
+    </div>
+    <button type="submit" class="btn btn-success">Save</button>
+    <a href="{% url 'home:user_list' %}" hx-get="{% url 'home:user_list' %}" hx-target="#content-area" class="btn btn-secondary">Cancel</a>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const pictureInput = document.querySelector('input[name="picture"]');
+        const picturePreview = document.getElementById("picture-preview");
+
+        pictureInput.addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Show the preview and set the src to the chosen file
+                picturePreview.src = URL.createObjectURL(file);
+                picturePreview.style.display = "block";
+            } else {
+                // Hide the preview if no file is selected
+                picturePreview.src = "";
+                picturePreview.style.display = "none";
+            }
+        });
+    });
+</script>
+
