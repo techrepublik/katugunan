@@ -17,7 +17,9 @@ from .models import Question, Unit, Department, Transactional, \
     Question, CustomUser, Rating
 from .forms import QuestionForm, UnitForm, DepartmentForm, UserForm, \
     Page1Form, Page2Form, Page3Form, Page4Form, Page5Form, \
-    ClientSurveyForm, RatingForm, ClientSurvey, Rating, YearSelectionForm
+    ClientSurveyForm, RatingForm, ClientSurvey, Rating, YearSelectionForm, \
+    CustomAuthenticationForm
+
 
 User = get_user_model()
 
@@ -417,13 +419,6 @@ def unit_delete(request, pk):
     unit.delete()
     return HttpResponse(status=200)
 
-# def unit_delete(request, pk):
-#     unit = get_object_or_404(Unit, pk=pk)
-#     if request.method == 'POST':
-#         unit.delete()
-#         return JsonResponse({'success': True})
-#     return render(request, 'units/unit_confirm_delete.html', {'unit': unit})
-
 
 def department_list(request):
     departments = Department.objects.all()
@@ -614,3 +609,30 @@ def rating_view(request):
         form = RatingForm()
 
     return render(request, 'rating_form.html', {'form': form})
+
+
+# accounts
+# Registration View
+# def register_view(request):
+#     if request.method == 'POST':
+#         form = CustomUserCreationForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
+#             login(request, user)  # Log in the user after registration
+#             return redirect('home')  # Replace 'home' with your desired redirect page
+#     else:
+#         form = CustomUserCreationForm()
+#     return render(request, 'register.html', {'form': form})
+
+# Login View
+def login_view(request):
+    if request.method == 'POST':
+        form = CustomAuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            # Replace 'home' with your desired redirect page
+            return redirect('home')
+    else:
+        form = CustomAuthenticationForm()
+    return render(request, 'login.html', {'form': form})

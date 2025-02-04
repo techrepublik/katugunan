@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import SurveyWizard, populate_dashboard
+from .views import SurveyWizard, login_view
+from django.contrib.auth.views import LogoutView
 from .forms import Page1Form, Page2Form, Page3Form, Page4Form, Page5Form
 from . import views
 
@@ -15,6 +16,11 @@ FORMS = [
 app_name = 'home'
 urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
+
+    # path('register/', register_view, name='register'),
+    path('login/', login_view, name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+
     #     path('survey/<str:user_id>/', SurveyWizard.as_view(FORMS), name='survey_wizard'),
     path('survey/success/', views.survey_success,
          name='survey_success'),  # Add a success view if needed

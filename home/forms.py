@@ -5,6 +5,7 @@ from django.forms import widgets
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import Question, Unit, Department, \
     Transactional, Question, ClientSurvey, Rating
 
@@ -304,3 +305,11 @@ class YearSelectionForm(forms.Form):
         required=True,
         label="Select Year",
     )
+
+
+# Login Form
+class CustomAuthenticationForm(AuthenticationForm):
+    username = forms.EmailField(
+        label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(
+        label="Password", widget=forms.PasswordInput(attrs={'class': 'form-control'}))

@@ -91,6 +91,10 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 AUTH_USER_MODEL = 'home.CustomUser'
 
+# Redirects
+LOGIN_REDIRECT_URL = '/'  # Redirect after login
+LOGOUT_REDIRECT_URL = '/'  # Redirect after logout
+
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases

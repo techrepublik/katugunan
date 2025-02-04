@@ -318,25 +318,6 @@
             </div>
         </div>
         <hr class="mb-5">
-        
-        <!-- SQD Questions -->
-        {% comment %} {% for sqd_field in form %}
-            {% if sqd_field.name|slice:":3" == "sqd" %}
-                <div class="mb-3">
-                    <!-- Display statement for each sqd field -->
-                    <label class="font-weight-bold">{{ sqd_field.field.statement }}</label>
-                    <div class="d-flex justify-content-around emoji-options">
-                        {% for choice, display in sqd_field.field.choices %}
-                            <label class="radio-custom">
-                                <input type="radio" name="{{ sqd_field.name }}" id="{{sqd_field.name}}_{{ choice }}"  value="{{ choice }}" {% if sqd_field.value == choice %}checked{% endif %}>
-                                <span class="emoji">{{ display }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-        {% endfor %} {% endcomment %}
-
 
         {% for sqd_field in form %}
             {% if sqd_field.name|slice:":3" == "sqd" %}
