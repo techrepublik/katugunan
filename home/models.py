@@ -216,41 +216,6 @@ class CustomUser(AbstractUser):
         return f'{self.last_name}, {self.first_name}'
 
 
-# class MyUser(AbstractUser):
-#     id_number = models.CharField(max_length=20, blank=True, null=True)
-#     middle_name = models.CharField(max_length=50, blank=True, null=True)
-#     sex = models.CharField(max_length=10, choices=[
-#                            ('M', 'Male'), ('F', 'Female')], blank=True)
-#     birth_date = models.DateField(null=True, blank=True)
-#     contact_no = models.CharField(max_length=50, blank=True, null=True)
-#     registered_on = models.DateTimeField(auto_now_add=True)
-#     department = models.ForeignKey(
-#         Department, on_delete=models.SET_NULL, null=True, blank=True)
-#     picture = models.ImageField(
-#         upload_to='profile_pictures/', null=True, blank=True)
-#     qrcode = models.ImageField(
-#         upload_to='qrcodes/', blank=True, null=True)  # QR code field
-
-#     # def save(self, *args, **kwargs):
-#     #     # Generate user_id if it doesn't already exist
-#     #     if not self.user_id:
-#     #         self.user_id = str(uuid.uuid4())
-
-#     #     # Generate QR code based on user_id
-#     #     qr = qrcode.make(self.user_id)
-#     #     qr_io = BytesIO()
-#     #     qr.save(qr_io, 'PNG')
-#     #     qr_file = File(qr_io, name=f"{self.user_id}.png")
-
-#     #     # Save the QR code to the qrcode field
-#     #     self.qrcode.save(qr_file.name, qr_file, save=False)
-
-#     #     # Call the super save method
-#     #     super().save(*args, **kwargs)
-
-#     def __str__(self):
-#         return self.username
-
 class ClientSurvey(models.Model):
     # Define choices for each CC question
     CC1_CHOICES = [
