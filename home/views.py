@@ -13,12 +13,11 @@ from django.views.decorators.http import require_GET
 from formtools.wizard.views import SessionWizardView
 from django.db.models.functions import ExtractYear
 from django.db.models import Count
-from .models import Question, Unit, Department, Transactional, \
+from .models import Question, Unit, Department, \
     Question, CustomUser, Rating
 from .forms import QuestionForm, UnitForm, DepartmentForm, UserForm, \
-    Page1Form, Page2Form, Page3Form, Page4Form, Page5Form, \
-    ClientSurveyForm, RatingForm, ClientSurvey, Rating, YearSelectionForm, \
-    CustomAuthenticationForm
+     RatingForm,  Rating, YearSelectionForm, \
+    CustomAuthenticationForm, ClientSurveyForm, ClientSurvey
 
 
 User = get_user_model()
@@ -503,53 +502,6 @@ def load_survey(request, user_id):
     # user_id = request.GET.get('user_id')
     user = get_object_or_404(CustomUser, user_id=user_id)
     return render(request, 'survey_form.html', {'user': user})
-
-
-# wizard
-FORMS = [("page1", Page1Form), ("page2", Page2Form),
-         ("page3", Page3Form), ("page4", Page4Form), ("page5", Page5Form)]
-TEMPLATES = {
-    "page1": "surveys/page1.html",
-    "page2": "surveys/page2.html",
-    "page3": "surveys/page3.html",
-    "page4": "surveys/page4.html",
-    "page5": "surveys/page5.html",
-}
-
-
-class SurveyWizard(SessionWizardView):
-    form_list = FORMS
-    template_name = "survey/survey_form.html"
-
-    def get_template_names(self):
-        return [TEMPLATES[self.steps.current]]
-
-    def get_context_data(self, form, **kwargs):
-        # Capture the user_id from the URL
-        context = super().get_context_data(form=form, **kwargs)
-        user_id = self.kwargs.get('user_id')
-        user = get_object_or_404(CustomUser, user_id=user_id)
-
-        # Pass the user data to the context
-        context['user'] = user
-        return context
-
-    def done(self, form_list, **kwargs):
-        # Retrieve the user and link responses to the correct user
-        user_id = self.kwargs.get('user_id')
-        user = get_object_or_404(CustomUser, user_id=user_id)
-
-        # Create a Transaction instance linked to the user
-        transaction = Transactional.objects.create(user_id=user.user_id)
-
-        # Process form data
-        for form in form_list:
-            # Here, save each form's data as needed
-            form.save(commit=False)
-            form.instance.transaction = transaction
-        transaction.save()
-
-        return render(self.request, "survey/success.html", {"transaction": transaction})
 
 
 def survey_form(request, user_id):

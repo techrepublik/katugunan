@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Unit, Department, Question, Response, Transactional
+from .models import CustomUser, Unit, Department, Question
 
 
 class CustomUserAdmin(UserAdmin):
@@ -24,5 +24,3 @@ admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Department)
 admin.site.register(Unit)
 admin.site.register(Question)
-admin.site.register(Response)
-admin.site.register(Transactional)

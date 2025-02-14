@@ -1,17 +1,7 @@
 from django.urls import path
-from .views import SurveyWizard, login_view
+from .views import login_view
 from django.contrib.auth.views import LogoutView
-from .forms import Page1Form, Page2Form, Page3Form, Page4Form, Page5Form
 from . import views
-
-# Define the form list and associate each step with a form
-FORMS = [
-    ("page1", Page1Form),
-    ("page2", Page2Form),
-    ("page3", Page3Form),
-    ("page4", Page4Form),
-    ("page5", Page5Form),
-]
 
 app_name = 'home'
 urlpatterns = [

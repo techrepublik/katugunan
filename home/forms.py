@@ -7,7 +7,7 @@ from crispy_forms.layout import Submit
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import Question, Unit, Department, \
-    Transactional, Question, ClientSurvey, Rating
+    Question, Rating, ClientSurvey
 
 User = get_user_model()
 
@@ -121,59 +121,6 @@ class QuestionForm(forms.ModelForm):
         self.helper.form_method = 'post'
         self.helper.add_input(
             Submit('submit', 'Save', css_class='btn btn-primary'))
-
-
-# Wizard
-class Page1Form(forms.ModelForm):
-    class Meta:
-        model = Transactional
-        fields = ['region', 'client_type', 'client_age', 'sex', 'client_name',
-                  't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 'others']
-        labels = {
-
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['others'].widget.attrs['disabled'] = True
-
-
-class Page2Form(forms.ModelForm):
-    class Meta:
-        model = Transactional
-        fields = ['cc11', 'cc12', 'cc13', 'cc14', 'cc21', 'cc22',
-                  'cc23', 'cc24', 'cc25', 'cc31', 'cc32', 'cc33', 'cc34']
-
-
-class Page3Form(forms.Form):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        questions = Question.objects.all()
-        for question in questions:
-            self.fields[f'{question.question_id}. {question.question_question}'] = forms.ChoiceField(
-                choices=[
-                    (1, '😠 '),
-                    (2, '😟 '),
-                    (3, '😐 '),
-                    (4, '😊 '),
-                    (5, '😍 '),
-                    (0, 'N/A')
-                ],
-                widget=forms.RadioSelect
-            )
-
-
-class Page4Form(forms.ModelForm):
-    class Meta:
-        model = Transactional
-        fields = ['comment']
-
-
-class Page5Form(forms.ModelForm):
-    class Meta:
-        model = Transactional
-        # Customize as needed for summary
-        exclude = ['transaction_id', 'user_id', 'created_on']
 
 
 # client survey
@@ -299,12 +246,17 @@ class RatingForm(forms.ModelForm):
 # Dashboard
 
 class YearSelectionForm(forms.Form):
-    year = forms.ChoiceField(
-        choices=[(year, year)
-                 for year in ClientSurvey.objects.dates('created_on', 'year')],
-        required=True,
-        label="Select Year",
-    )
+    year = forms.ChoiceField(choices=[])  # Initialize with empty choices
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Build the choices dynamically here
+        self.fields['year'].choices = [
+            (year, year)
+            for year in ClientSurvey.objects.order_by('created_on')
+                                      .values_list('created_on', flat=True)
+                                      .distinct()
+        ]
 
 
 # Login Form
