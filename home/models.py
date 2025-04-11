@@ -148,7 +148,7 @@ class CustomUser(AbstractUser):
     contact_no = models.CharField(max_length=50, blank=True, null=True)
     registered_on = models.DateTimeField(default=timezone.now)
     user_level = models.CharField(max_length=20, choices=[('Admin', 'Admin'), (
-        'Super', 'Super'), ('Unit', 'Unit'), ('Client', 'Client')], default='Client')
+        'Super', 'Super'), ('Unit', 'Unit'), ('Client', 'Client')], blank=True, null=True)
     department = models.ForeignKey(
         Department, on_delete=models.SET_NULL, null=True, blank=True)
     position = models.ForeignKey(
@@ -159,6 +159,12 @@ class CustomUser(AbstractUser):
         upload_to='qrcodes/', blank=True, null=True)  # QR code field
 
     def save(self, *args, **kwargs):
+
+        # Set default user_level on creation if not already provided.
+        # Only run this if the object is new (no primary key yet)
+        if not self.pk and not self.user_level:
+            self.user_level = 'Super' if self.is_superuser else 'Client'
+
         # Generate user_id if it doesn't already exist
         if not self.user_id:
             self.user_id = str(uuid.uuid4())
