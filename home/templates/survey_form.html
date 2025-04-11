@@ -167,6 +167,36 @@
             font-size: 0.9em;
             margin-top: 5px;
         }
+
+        /* Container for the custom checkbox */
+        .custom-checkbox-service {
+            display: inline-block;
+            margin: 1px;
+        }
+        /* Hide the default checkbox */
+        .custom-checkbox-service input[type="checkbox"] {
+            display: none;
+        }
+        /* Style the label as a button */
+        .custom-checkbox-service label {
+            display: inline-block;
+            padding: 5px 10px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+            user-select: none;
+        }
+        /* Highlight the label when the checkbox is checked */
+        .custom-checkbox-service input[type="checkbox"]:checked + label {
+            background-color: #0A6515;
+            color: #fff;
+            border-color: #DAA520;
+        }
+        /* Optional: add a hover effect */
+        .custom-checkbox-service label:hover {
+            border-color: #DAA520;
+        }
     </style>
 </head>
 <body>
@@ -176,18 +206,36 @@
         <img src="{% static 'usm_logo.png' %}" alt="Admin Logo" width="50" height="50" class="sidebar-logo">
     </div>
     <h5 class="text-center">University of Southern Mindanao<br>Client Satisfaction Survey Form</h5>
-    <p class="text-center font-weight-bold">Help Us Serve You Better!</p>
+    <p class="text-center font-weight-bold">Help us serve you better!</p>
     <hr>
     {% if user.picture %}
         <div class="text-center mb-2">
             <img src="{{ user.picture.url }}" alt="{{ user.username }}'s picture" class="rounded-circle" width="100">
         </div>
     {% endif %}
-    <h5 class="text-center"><span class="text-success font-weight-bold">{{ user }}</span></h6>
+    <h5 class="text-center"><span class="text-success font-weight-bold">{{ user }}</span></h5>
     <h6 class="text-center mb-5"><span class="text-success font-weight-bold">{{ user.department }}</span></h6>
+    <h6 class="text-center mb-5"><span class="text-success font-weight-bold">{{ user.position }}</span></h6>
 
     <form method="POST" id="surveyForm">
         {% csrf_token %}
+        <!-- Services -->
+        <div class="section-title text-center">Service(s)</div>
+        <div class="form-group question-section text-center">
+            {% for service, label in form.services.field.choices %}
+                <div class="custom-checkbox-service">
+                    <input class="" type="checkbox" name="services" value="{{ service }}" id="{{ service }}">
+                    <label class="custom-checkbox-label" for="{{ service }}">{{ label }}</label>
+                </div>
+            {% endfor %}
+            {% if form.services.errors %}
+                <ul class="errorlist">
+                    {% for error in form.services.errors %}
+                        <li >Select at least one transaction.</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
         <!-- Type of Client -->
         <div class="section-title text-center">Type of Client</div>
         <div class="form-group question-section">
@@ -234,7 +282,7 @@
             {% if form.transaction_types.errors %}
                 <ul class="errorlist">
                     {% for error in form.transaction_types.errors %}
-                        <li >Select one transaction.</li>
+                        <li >Select at least one transaction.</li>
                     {% endfor %}
                 </ul>
             {% endif %}

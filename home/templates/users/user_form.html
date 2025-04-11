@@ -12,12 +12,14 @@
     <div class="col-md-6 mb-0">
         {{ form.email|as_crispy_field }}
     </div>
+    <!--
     <div class="col-md-6 mb-0">
         {{ form.password|as_crispy_field }}
     </div>
     <div class="col-md-6 mb-0">
         {{ form.confirm_password|as_crispy_field }}
     </div>
+    -->
     <hr />
     <div class="col-md-6 mb-0">
         {{ form.id_number|as_crispy_field }}
@@ -47,6 +49,14 @@
     <div class="col-md-12 mb-0">
         {{ form.department|as_crispy_field }}
     </div>
+    <div class="col-md-12 mb-0">
+        {{ form.position|as_crispy_field }}
+    </div>
+    {% if request.user.user_level == 'Admin' or request.user.user_level == 'Super' %}
+        <div class="col-md-12 mb-0">
+            {{ form.user_level|as_crispy_field }}
+        </div>
+    {% endif %}
     <div class="form-group">
         <label for="picture">Profile Picture</label><br>
         
@@ -62,7 +72,27 @@
     </div>
     <button type="submit" class="btn btn-success">Save</button>
     <a href="{% url 'home:user_list' %}" hx-get="{% url 'home:user_list' %}" hx-target="#content-area" class="btn btn-secondary">Cancel</a>
+    {% if form.instance.pk and request.user.user_level == 'Super' or request.user.user_level == 'Admin' %}
+        <button class="btn btn-outline-secondary w-auto" hx-get="{% url 'home:change_user_password' form.instance.pk %}" hx-target="#modal-body" data-toggle="modal" data-target="#passModal">Set password</button>
+    {% endif %}
 </form>
+
+<!-- Modal Structure -->
+<div class="modal fade" id="passModal" tabindex="-1" role="dialog" aria-labelledby="passModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passModalLabel">Change Password</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

@@ -1,0 +1,45 @@
+<h2>Department List</h2>
+<button class="btn btn-success mb-3" hx-get="{% url 'home:position_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#positionModal">Add New Position</button>
+
+<table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" id="position-table">
+    <thead>
+        <tr>
+            <th>Position Name</th>
+            <th>Short</th>
+            <th>Unit/College</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="position-list">
+        {% for position in positions %}
+            {% include "positions/position_row.html" %}
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Notification area -->
+<div id="notification" class="alert alert-success" style="display: none;"></div>
+
+<!-- Modal Structure -->
+<div class="modal fade" id="positionModal" tabindex="-1" role="dialog" aria-labelledby="positionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="positionModalLabel">Position Form</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#position-table').DataTable(); // Initialize DataTables
+    });
+
+</script>

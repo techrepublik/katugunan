@@ -1,0 +1,12 @@
+{% for group, options, index in widget.optgroups %}
+  <div class="checkbox-group">
+    {% for option in options %}
+        <div class="form-check">
+            <label class="custom-checkbox-label">
+                <input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %} class="custom-checkbox">
+                <span class="custom-checkbox-text">{{ option.label }}</span>
+            </label>
+        </div>
+    {% endfor %}
+  </div>
+{% endfor %}

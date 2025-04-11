@@ -2,6 +2,8 @@ import os
 from PIL import Image
 from typing import Tuple
 import uuid
+
+from django.db.models.fields import BigAutoField
 import qrcode
 from io import BytesIO
 from django.core.files import File
@@ -9,6 +11,18 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.conf import settings
+
+
+class Branch(models.Model):
+    branch_name = models.CharField(max_length=250)
+    branch_short_name = models.CharField(max_length=100)
+    branch_address = models.CharField(max_length=250, blank=True, null=True)
+
+    def __str__(self) -> str:
+        return self.branch_short_name
+
+    class Meta:
+        ordering = ['branch_short_name',]
 
 
 class Unit(models.Model):
@@ -30,6 +44,8 @@ class Unit(models.Model):
     unit_short_name = models.CharField(max_length=50)
     unit_type = models.CharField(
         max_length=50, choices=types, default=ACADEMIC)
+    branch = models.ForeignKey(
+        Branch, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self) -> str:
         return self.unit_short_name
@@ -50,6 +66,36 @@ class Department(models.Model):
 
     class Meta:
         ordering = ['department_short_name']
+
+
+class Position(models.Model):
+    department = models.ForeignKey(
+        Department, on_delete=models.SET_NULL, blank=True, null=True)
+    position_name = models.CharField(max_length=150)
+    position_short = models.CharField(max_length=50, blank=True, null=True)
+
+    def __str__(self) -> str:
+        return self.position_name
+
+    class Meta:
+        ordering = ['position_name',]
+
+
+class Service(models.Model):
+    position_id = models.ForeignKey(
+        Position, on_delete=models.SET_NULL, blank=True, null=True)
+    service_name = models.CharField(max_length=150)
+    service_no = models.IntegerField(default=0)
+    service_type = models.CharField(max_length=50, choices=[(
+        'Internal', 'Internal'), ('External', 'External'), ('All', 'All')], default='Internal')
+    service_time = models.CharField(max_length=150, blank=True, null=True)
+    service_is_payment = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return self.service_name
+
+    class Meta:
+        ordering = ['service_name',]
 
 
 class Question(models.Model):
@@ -101,8 +147,12 @@ class CustomUser(AbstractUser):
     birth_date = models.DateField(null=True, blank=True)
     contact_no = models.CharField(max_length=50, blank=True, null=True)
     registered_on = models.DateTimeField(default=timezone.now)
+    user_level = models.CharField(max_length=20, choices=[('Admin', 'Admin'), (
+        'Super', 'Super'), ('Unit', 'Unit'), ('Client', 'Client')], default='Client')
     department = models.ForeignKey(
         Department, on_delete=models.SET_NULL, null=True, blank=True)
+    position = models.ForeignKey(
+        Position, on_delete=models.SET_NULL, blank=True, null=True)
     picture = models.ImageField(
         upload_to=user_directory_path, null=True, blank=True)
     qrcode = models.ImageField(
@@ -224,6 +274,10 @@ class ClientSurvey(models.Model):
         verbose_name="Effectiveness of CC",
         help_text="If aware of CC, how much did the CC help you in your transaction?"
     )
+
+    # Define the many services
+    services = models.ManyToManyField(
+        Service, blank=True, related_name='users')
 
     # Define the fields
     transaction_id = models.CharField(

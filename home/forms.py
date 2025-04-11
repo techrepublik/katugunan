@@ -5,9 +5,12 @@ from django.forms import widgets
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import Question, Unit, Department, \
-    Question, Rating, ClientSurvey
+from .models import Branch, Question, Unit, Department, \
+    Question, Rating, ClientSurvey, Position, Service
+from .widgets import CustomCheckboxSelectMultiple
 
 User = get_user_model()
 
@@ -23,14 +26,14 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         # fields = '__all__'
-        fields = ['username', 'password', 'confirm_password', 'email', 'first_name', 'last_name', 'middle_name', 'id_number',
-                  'birth_date', 'sex', 'birth_date', 'contact_no',
-                  'department', 'picture'
+        fields = ['username', 'email', 'first_name', 'last_name', 'middle_name', 'id_number',
+                  'birth_date', 'sex', 'birth_date', 'contact_no', 'user_level',
+                  'department', 'position', 'picture'
                   ]
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter username'}),
-            'password': forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter password'}),
-            'confirm_password': forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Re-enter password'}),
+            # 'password': forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter password'}),
+            # 'confirm_password': forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Re-enter password'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter email'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter first name'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter last name'}),
@@ -38,7 +41,9 @@ class UserForm(forms.ModelForm):
             'id_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter ID number'}),
             'birth_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'date'}),
             'contact_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter contact no.'}),
+            'user_level': forms.Select(attrs={'class': 'form-control'}),
             'department': forms.Select(attrs={'class': 'form-control'}),
+            'position': forms.Select(attrs={'class': 'form-control'}),
             'picture': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
@@ -76,10 +81,42 @@ class UserForm(forms.ModelForm):
         #     Submit('submit', 'Save', css_class='btn btn-primary'))
 
 
+# Change password
+class CustomUserPasswordChangeForm(forms.Form):
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label="New Password"
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label="Confirm Password"
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password = cleaned_data.get("new_password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if new_password and confirm_password:
+            if new_password != confirm_password:
+                raise forms.ValidationError("Passwords do not match.")
+            # Validate using Django's built-in validators
+            try:
+                validate_password(new_password)
+            except ValidationError as e:
+                raise forms.ValidationError(e.messages)
+        return cleaned_data
+
+
 class UnitForm(forms.ModelForm):
     class Meta:
         model = Unit
-        fields = ['unit_name', 'unit_short_name', 'unit_type',]
+        fields = '__all__'
+
+        widgets = {
+            'unit_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter unit name'}),
+            'unit_short_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter unit short name'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,6 +124,18 @@ class UnitForm(forms.ModelForm):
         self.helper.form_method = 'post'
         self.helper.add_input(
             Submit('submit', 'Save', css_class='btn btn-primary'))
+
+
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = '__all__'
+
+        widgets = {
+            'branch_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter branch name'}),
+            'branch_short_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter short name'}),
+            'branch_address': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter branch address', 'rows': 3})
+        }
 
 
 class DepartmentForm(forms.ModelForm):
@@ -100,6 +149,25 @@ class DepartmentForm(forms.ModelForm):
         self.helper.form_method = 'post'
         self.helper.add_input(
             Submit('submit', 'Save', css_class='btn btn-primary'))
+
+
+class PositionForm(forms.ModelForm):
+    class Meta:
+        model = Position
+        fields = '__all__'
+
+
+class ServiceForm(forms.ModelForm):
+    class Meta:
+        model = Service
+        fields = '__all__'
+
+        widgets = {
+            # 'service_is_payment': forms.CheckboxInput(attrs={'class': 'form-control-sm'})
+        }
+        labels = {
+            'service_is_payment': 'With payment',
+        }
 
 
 class QuestionForm(forms.ModelForm):
@@ -216,11 +284,12 @@ class ClientSurveyForm(forms.ModelForm):
     class Meta:
         model = ClientSurvey
         fields = [
-            'user_id', 'client_type', 'region', 'sex', 'age', 'transaction_types',
+            'user_id', 'client_type', 'region', 'services', 'sex', 'age', 'transaction_types',
             'cc1', 'cc2', 'cc3', 'sqd0', 'sqd1', 'sqd2', 'sqd3', 'sqd4', 'sqd5',
             'sqd6', 'sqd7', 'sqd8', 'suggestions', 'email', 'others'
         ]
         widgets = {
+            'services': CustomCheckboxSelectMultiple(attrs={'class': 'custom-checkbox'}),
             'region': forms.Select(attrs={'class': 'form-control'}),
             'sex': forms.Select(attrs={'class': 'form-control'}),
             'age': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -228,6 +297,18 @@ class ClientSurveyForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email address (optional)'}),
             'others': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Specify here..'})
         }
+
+    def __init__(self, *args, **kwargs):
+        # Pop the user from kwargs; it should be passed when instantiating the form.
+        user = kwargs.pop('user', None)
+        print(user)
+        super(ClientSurveyForm, self).__init__(*args, **kwargs)
+        if user and user.position:
+            # Filter services based on the CustomUser's position.
+            self.fields['services'].queryset = Service.objects.filter(
+                position_id=user.position)
+        else:
+            self.fields['services'].queryset = Service.objects.none()
 
 # Rating form
 
@@ -254,14 +335,14 @@ class YearSelectionForm(forms.Form):
         self.fields['year'].choices = [
             (year, year)
             for year in ClientSurvey.objects.order_by('created_on')
-                                      .values_list('created_on', flat=True)
-                                      .distinct()
+            .values_list('created_on', flat=True)
+            .distinct()
         ]
 
 
 # Login Form
 class CustomAuthenticationForm(AuthenticationForm):
-    username = forms.EmailField(
-        label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    username = forms.CharField(
+        label="", widget=forms.TextInput(attrs={'class': 'form-control text-center', 'placeholder': 'username'}))
     password = forms.CharField(
-        label="Password", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+        label="", widget=forms.PasswordInput(attrs={'class': 'form-control text-center', 'placeholder': 'password'}))

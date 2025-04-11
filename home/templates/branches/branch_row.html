@@ -1,0 +1,9 @@
+<tr id="branch-{{branch.id}}">
+    <td>{{ branch.branch_name }}</td>
+    <td>{{ branch.branch_short_name }}</td>
+    <td>{{ branch.branch_address }}</td>
+    <td>
+        <button class="btn btn-sm btn-secondary" hx-get="{% url 'home:branch_update' branch.id %}" hx-target="#modal-body" hx-trigger="click" hx-trigger="click" data-toggle="modal" data-target="#branchModal">Edit</button>
+        <button class="btn btn-sm btn-danger" hx-delete="{% url 'home:branch_delete' branch.id %}" hx-target="#branch-{{ branch.id }}" hx-swap="outerHTML" hx-confirm="Are you sure to delete this record?">Del</button>
+    </td>
+</tr>

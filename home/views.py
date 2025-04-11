@@ -4,7 +4,11 @@ from django.http.response import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 from django.db.models import Count, Avg, Q
 from collections import Counter
@@ -14,15 +18,17 @@ from formtools.wizard.views import SessionWizardView
 from django.db.models.functions import ExtractYear
 from django.db.models import Count
 from .models import Question, Unit, Department, \
-    Question, CustomUser, Rating
+    Question, CustomUser, Rating, Position, Service, Branch
 from .forms import QuestionForm, UnitForm, DepartmentForm, UserForm, \
-     RatingForm,  Rating, YearSelectionForm, \
-    CustomAuthenticationForm, ClientSurveyForm, ClientSurvey
+    RatingForm,  Rating, YearSelectionForm, \
+    CustomAuthenticationForm, ClientSurveyForm, ClientSurvey, PositionForm, ServiceForm, \
+    BranchForm, CustomUserPasswordChangeForm
 
 
 User = get_user_model()
 
 
+@login_required(login_url='home:login')
 def dashboard_view(request):
 
     surveys = ClientSurvey.objects.all()
@@ -419,6 +425,48 @@ def unit_delete(request, pk):
     return HttpResponse(status=200)
 
 
+# Branch
+def branch_list(request):
+    branches = Branch.objects.all()
+    # Check if it's an HTMX request
+    if request.headers.get('HX-Request'):
+        return render(request, 'branches/branch_list_partial.html', {'branches': branches})
+    return render(request, 'branches/branch_list.html', {'branches': branches})
+
+
+def branch_create(request):
+    if request.method == 'POST':
+        form = BranchForm(request.POST)
+        if form.is_valid():
+            branch = form.save()
+            return render(request, 'branches/branch_row.html',
+                          {'branch': branch, 'success': True})
+    else:
+        form = BranchForm()
+    return render(request, 'branches/branch_form.html', {'form': form})
+
+
+def branch_update(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    if request.method == 'POST':
+        form = BranchForm(request.POST, instance=branch)
+        if form.is_valid():
+            branch = form.save()
+            return render(request, 'branches/branch_row.html', {'branch': branch})
+    else:
+        form = BranchForm(instance=branch)
+    return render(request, 'branches/branch_form.html', {'form': form})
+
+
+@ require_http_methods(['DELETE'])
+def branch_delete(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    branch.delete()
+    return HttpResponse(status=200)
+
+
+# Department
+
 def department_list(request):
     departments = Department.objects.all()
     # Check if it's an HTMX request
@@ -455,6 +503,88 @@ def department_update(request, pk):
 def department_delete(request, pk):
     department = get_object_or_404(Department, pk=pk)
     department.delete()
+    return HttpResponse(status=200)
+
+# position
+
+
+def position_list(request):
+    positions = Position.objects.all()
+    # Check if it's an HTMX request
+    if request.headers.get('HX-Request'):
+        return render(request, 'positions/position_list_partial.html', {'positions': positions})
+    return render(request, 'positions/position_list.html', {'positions': positions})
+
+
+def position_create(request):
+    if request.method == 'POST':
+        form = PositionForm(request.POST)
+        if form.is_valid():
+            position = form.save()
+            return render(request, 'positions/position_row.html',
+                          {'position': position, 'success': True})
+    else:
+        form = PositionForm()
+    return render(request, 'positions/position_form.html', {'form': form})
+
+
+def position_update(request, pk):
+    position = get_object_or_404(Position, pk=pk)
+    if request.method == 'POST':
+        form = PositionForm(request.POST, instance=position)
+        if form.is_valid():
+            position = form.save()
+            return render(request, 'positions/position_row.html', {'position': position})
+    else:
+        form = PositionForm(instance=position)
+    return render(request, 'positions/position_form.html', {'form': form})
+
+
+@ require_http_methods(['DELETE'])
+def position_delete(request, pk):
+    position = get_object_or_404(Position, pk=pk)
+    position.delete()
+    return HttpResponse(status=200)
+
+# services
+
+
+def service_list(request):
+    services = Service.objects.all()
+    # Check if it's an HTMX request
+    if request.headers.get('HX-Request'):
+        return render(request, 'services/service_list_partial.html', {'services': services})
+    return render(request, 'services/service_list.html', {'services': services})
+
+
+def service_create(request):
+    if request.method == 'POST':
+        form = ServiceForm(request.POST)
+        if form.is_valid():
+            service = form.save()
+            return render(request, 'services/service_row.html',
+                          {'service': service, 'success': True})
+    else:
+        form = ServiceForm()
+    return render(request, 'services/service_form.html', {'form': form})
+
+
+def service_update(request, pk):
+    service = get_object_or_404(Service, pk=pk)
+    if request.method == 'POST':
+        form = ServiceForm(request.POST, instance=service)
+        if form.is_valid():
+            service = form.save()
+            return render(request, 'services/service_row.html', {'service': service})
+    else:
+        form = ServiceForm(instance=service)
+    return render(request, 'services/service_form.html', {'form': form})
+
+
+@ require_http_methods(['DELETE'])
+def service_delete(request, pk):
+    service = get_object_or_404(Service, pk=pk)
+    service.delete()
     return HttpResponse(status=200)
 
 
@@ -507,7 +637,7 @@ def load_survey(request, user_id):
 def survey_form(request, user_id):
     user = get_object_or_404(CustomUser, user_id=user_id)
     if request.method == 'POST':
-        form = ClientSurveyForm(request.POST)
+        form = ClientSurveyForm(request.POST, user=user)
         if form.is_valid():
             print(form.cleaned_data)
             survey = form.save(commit=False)
@@ -516,12 +646,13 @@ def survey_form(request, user_id):
                 survey.latitude = request.POST.get('latitude')
                 survey.longitude = request.POST.get('longitude')
             survey.save()  # Inserts the form data, including user_id, into the database
+            form.save_m2m()  # Inserts the m2m data (services), into the database
             # Redirect to a success page or thank you page
             return redirect('home:rating_view')
         else:
             print(form.errors)
     else:
-        form = ClientSurveyForm()
+        form = ClientSurveyForm(user=user)
 
     sqd_statements = {
         'sqd0': "SQD0. I am satisfied with the service that I availed.",
@@ -580,11 +711,55 @@ def rating_view(request):
 def login_view(request):
     if request.method == 'POST':
         form = CustomAuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
+        # if form.is_valid():
+        #     user = form.get_user()
+        #     login(request, user)
+        #     # Replace 'home' with your desired redirect page
+        #     return redirect('home:dashboard')
+
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        print(username, password)
+        user = authenticate(request, username=username, password=password)
+        print(user)
+        if user is not None:
             login(request, user)
-            # Replace 'home' with your desired redirect page
-            return redirect('home')
+            return redirect('home:dashboard')
+        else:
+            messages.error(request, 'Invalid username or password.')
     else:
         form = CustomAuthenticationForm()
     return render(request, 'login.html', {'form': form})
+
+
+@login_required(login_url='home:login')
+def logout_view(request):
+    logout(request)
+    return redirect('home:login')
+
+
+@login_required(login_url='home:login')
+def change_user_password(request, pk):
+    user = get_object_or_404(CustomUser, pk=pk)
+
+    if request.method == 'POST':
+        form = CustomUserPasswordChangeForm(request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data['new_password']
+            user.set_password(new_password)
+            user.is_staff = True  # Activate as staff
+            user.save()
+            # Return a success partial for htmx to replace the modal body
+            return render(request, 'users/user_change_password_success_partial.html', {'user': user})
+        else:
+            # Return the form with errors as a partial
+            return render(request, 'users/user_change_password.html', {'user': user, 'form': form})
+    else:
+        form = CustomUserPasswordChangeForm()
+
+    return render(request, 'users/user_change_password.html', {'user': user, 'form': form})
+
+
+# Surveys
+def survey_all(request):
+    return render(request, 'surveys/survey_all.html')

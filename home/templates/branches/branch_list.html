@@ -1,0 +1,47 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+    <h2>Branch List</h2>
+    <button class="btn btn-success mb-3" hx-get="{% url 'home:branch_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#branchModal">Add New Branch</button>
+
+    <table class="table table-sm table-hover table-striped table-bordered mt-4" id="branch-table">
+        <thead>
+            <tr>
+                <th>Branch Name</th>
+                <th>Short name</th>
+                <th>Address</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="branch-list">
+            {% for branch in branches %}
+                {% include "branches/branch_row.html" %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+
+    <!-- Modal Structure -->
+    <div class="modal fade" id="branchModal" tabindex="-1" role="dialog" aria-labelledby="branchModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="branchModalLabel">Branch Form</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Content dynamically loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#department-table').DataTable(); // Initialize DataTables
+        });
+    </script>
+{% endblock  %}
