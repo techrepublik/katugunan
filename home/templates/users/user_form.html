@@ -101,12 +101,19 @@
 
         pictureInput.addEventListener("change", function(event) {
             const file = event.target.files[0];
-            if (file) {
-                // Show the preview and set the src to the chosen file
+            const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+            if (file && validImageTypes.includes(file.type)) {
+                // Display the image preview with the selected file
                 picturePreview.src = URL.createObjectURL(file);
                 picturePreview.style.display = "block";
+            } else if (file) {
+                // Alert the user if the selected file is not a valid image
+                alert("Please select a valid image file.");
+                picturePreview.src = "";
+                picturePreview.style.display = "none";
             } else {
-                // Hide the preview if no file is selected
+                // No file selected: hide the preview image
                 picturePreview.src = "";
                 picturePreview.style.display = "none";
             }

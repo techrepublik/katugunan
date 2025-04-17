@@ -142,6 +142,10 @@ class DepartmentForm(forms.ModelForm):
     class Meta:
         model = Department
         fields = ['department_name', 'department_short_name', 'unit_id']
+        widgets = {
+            'department_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter deparment name'}),
+            'department_short_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter short name'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -155,6 +159,10 @@ class PositionForm(forms.ModelForm):
     class Meta:
         model = Position
         fields = '__all__'
+        widgets = {
+            'position_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter position name'}),
+            'position_short': forms.TextInput(attrs={'class': 'form-contol', 'placeholder': 'Enter short name'})
+        }
 
 
 class ServiceForm(forms.ModelForm):
@@ -164,6 +172,8 @@ class ServiceForm(forms.ModelForm):
 
         widgets = {
             # 'service_is_payment': forms.CheckboxInput(attrs={'class': 'form-control-sm'})
+            'service_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter service name'}),
+            'service_time': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Duration (i.e. 5-min'}),
         }
         labels = {
             'service_is_payment': 'With payment',

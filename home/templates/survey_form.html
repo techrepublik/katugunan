@@ -171,7 +171,7 @@
         /* Container for the custom checkbox */
         .custom-checkbox-service {
             display: inline-block;
-            margin: 1px;
+            margin: 1px 2px 2px 6px;
         }
         /* Hide the default checkbox */
         .custom-checkbox-service input[type="checkbox"] {
@@ -186,12 +186,31 @@
             cursor: pointer;
             transition: background-color 0.3s, border-color 0.3s;
             user-select: none;
+            position:relative;
+        }
+        /* Base style for the pseudo-element (check mark) */
+        .custom-checkbox-service label::before {
+            content: "";
+            position: absolute;
+            left: -25px; /* Adjust as needed */
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            visibility: hidden;
         }
         /* Highlight the label when the checkbox is checked */
         .custom-checkbox-service input[type="checkbox"]:checked + label {
             background-color: #0A6515;
             color: #fff;
             border-color: #DAA520;
+        }
+        /* Display a check mark before the label when checked */
+        .custom-checkbox-service input[type="checkbox"]:checked + label::before {
+            content: "✓";  /* Unicode check mark character */
+            visibility: visible;
+            background-color: #DAA520;
+            margin: 0px 0px 0px 10px;
+            border-color: #0A6515;
         }
         /* Optional: add a hover effect */
         .custom-checkbox-service label:hover {
@@ -214,7 +233,8 @@
         </div>
     {% endif %}
     <h5 class="text-center"><span class="text-success font-weight-bold">{{ user }}</span></h5>
-    <h6 class="text-center mb-5"><span class="text-success font-weight-bold">{{ user.department }}</span></h6>
+    <h6 class="text-center"><span class="text-success font-weight-bold">{{ user.department }}</span></h6>
+    <h6 class="text-center"><span class="text-success font-weight-bold">{{ user.department.unit_id.unit_short_name }} - {{ user.department.unit_id.branch.branch_short_name }}</span></h6>
     <h6 class="text-center mb-5"><span class="text-success font-weight-bold">{{ user.position }}</span></h6>
 
     <form method="POST" id="surveyForm">
