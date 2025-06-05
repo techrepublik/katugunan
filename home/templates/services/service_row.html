@@ -1,12 +1,17 @@
 <tr id="service-{{service.id}}">
     <td>{{ service.service_name }}</td>
     <td>{{ service.service_type }}</td>
-    <td>{{ service.service_no }}</td>
+    <td class="text-right">{{ service.service_no }}</td>
     <td>{{ service.service_time }}</td>
-    <td>{{ service.service_is_payment }}</td>
+    <td class="text-center"><input disabled type="checkbox" {% if service.service_is_payment %} checked {% endif %}>
+    </td>
     <td>{{ service.position_id }}</td>
-    <td>
-        <button class="btn btn-sm btn-secondary" hx-get="{% url 'home:service_update' service.id %}" hx-target="#modal-body" hx-trigger="click" hx-trigger="click" data-toggle="modal" data-target="#serviceModal">Edit</button>
-        <button class="btn btn-sm btn-danger" hx-delete="{% url 'home:service_delete' service.id %}" hx-target="#service-{{ service.id }}" hx-swap="outerHTML" hx-confirm="Are you sure to delete this record?">Del</button>
+    <td class="text-right">
+        <button class="btn btn-sm btn-secondary" hx-get="{% url 'home:service_update' service.id %}"
+            hx-target="#modal-body" hx-trigger="click" hx-trigger="click" data-toggle="modal"
+            data-target="#serviceModal">Edit</button>
+        <button class="btn btn-sm btn-danger" hx-delete="{% url 'home:service_delete' service.id %}"
+            hx-target="#service-{{ service.id }}" hx-swap="outerHTML"
+            hx-confirm="Are you sure to delete this record?">Del</button>
     </td>
 </tr>

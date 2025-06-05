@@ -14,11 +14,11 @@ from django.db.models import Count, Avg, Q
 from collections import Counter
 from itertools import chain
 from django.views.decorators.http import require_GET
-from formtools.wizard.views import SessionWizardView
 from django.db.models.functions import ExtractYear
 from django.db.models import Count
+from collections import defaultdict
 from .models import Question, Unit, Department, \
-    Question, CustomUser, Rating, Position, Service, Branch
+    Question, CustomUser, Rating, Position, Service, Branch, ClientSurvey
 from .forms import QuestionForm, UnitForm, DepartmentForm, UserForm, \
     RatingForm,  Rating, YearSelectionForm, \
     CustomAuthenticationForm, ClientSurveyForm, ClientSurvey, PositionForm, ServiceForm, \
@@ -33,6 +33,10 @@ def dashboard_view(request):
 
     surveys = ClientSurvey.objects.all()
     ratings = Rating.objects.all()
+    users = User.objects.count()
+    services = Service.objects.count()
+    units = Unit.objects.count()
+    departments = Department.objects.count()
 
     # Aggregate data for summaries
     total_surveys = surveys.count()
@@ -72,6 +76,10 @@ def dashboard_view(request):
         # 'male_count': male_count,
         # 'female_count': female_count,
         'years': years,
+        'users': users,
+        'services': services,
+        'units': units,
+        'departments': departments,
     }
     return render(request, 'dashboard.html', context)
 
@@ -116,6 +124,37 @@ def populate_dashboard_region(request):
     }
 
     return JsonResponse(data)
+
+
+def populate_dashboard_gender(request):
+    year = request.GET.get('year_sex')
+
+    if year:
+        genders = CustomUser.objects.values('sex').annotate(
+            count=Count('id')).filter(registered_on__year=year)
+    else:
+        genders = CustomUser.objects.values('sex').annotate(count=Count('id'))
+
+    labels = []
+    counts = []
+
+    for entry in genders:
+        if entry['sex'] == 'M':
+            labels.append('Male')
+        elif entry['sex'] == 'F':
+            labels.append('Female')
+        else:
+            labels.append('Unspecified')
+        counts.append(entry['count'])
+
+    print(genders)
+
+    context = {
+        'labels': labels,
+        'counts': counts,
+    }
+
+    return JsonResponse(context)
 
 
 @require_GET
@@ -763,3 +802,148 @@ def change_user_password(request, pk):
 # Surveys
 def survey_all(request):
     return render(request, 'surveys/survey_all.html')
+
+def services_count(request):
+    # services_count = ClientSurvey.objects.annotate(service_count=Count('services')).order_by('-service_count')
+    # print(services_count)
+    # for service in services_count:
+    #     print(service.service_count)
+    # return render(request, 'surveys/services_count.html', {'services_count': services_count})
+
+    # user_last_names = {user.user_id: user.last_name for user in CustomUser.objects.all()}
+
+    # services_count = defaultdict(int)
+    # for survey in ClientSurvey.objects.prefetch_related('services') :
+    #     for service in survey.services.all():
+    #         key = (survey.user_id, service.service_name)
+    #         services_count[key] += 1
+    # print(services_count)
+    # print()
+    # for (user_id, service_name), count in services_count.items():
+    #     last_name = user_last_names.get(user_id, 'Unknown')
+    #     print(f"{user_id}, {last_name} - {service_name}: {count}")
+    # return render(request, 'surveys/services_count.html', {'services_count': services_count})
+
+    # Step 1: Build a user info map using user_id
+    # user_info_map = {}
+    # users = CustomUser.objects.select_related('department__unit_id')
+
+    # for user in users:
+    #     user_info_map[user.user_id] = {
+    #         'last_name': user.last_name,
+    #         'department': user.department.department_name if user.department else "N/A",
+    #         'unit': user.department.unit_id.unit_name if user.department and user.department.unit_id else "N/A"
+    #     }
+
+    # # Step 2: Count each service per user
+    # service_counter = defaultdict(int)
+
+    # surveys = ClientSurvey.objects.prefetch_related('services')
+
+    # for survey in surveys:
+    #     for service in survey.services.all():
+    #         key = (survey.user_id, service.service_name)
+    #         service_counter[key] += 1
+
+    # # Step 3: Display final results
+    # for (user_id, service_name), count in service_counter.items():
+    #     user_info = user_info_map.get(user_id, {
+    #         'last_name': 'Unknown',
+    #         'department': 'Unknown',
+    #         'unit': 'Unknown'
+    #     })
+    #     print(
+    #         f"User ID: {user_id}, Last Name: {user_info['last_name']}, "
+    #         f"Department: {user_info['department']}, Unit: {user_info['unit']}, "
+    #         f"Service: {service_name}, Count: {count}"
+    #     )
+
+    # Step 1: Map user_id to user details including department and unit
+    user_info_map = {}
+    users = CustomUser.objects.select_related('department__unit_id')
+
+    for user in users:
+        user_info_map[user.user_id] = {
+            'last_name': user.last_name,
+            'department': user.department.department_name if user.department else "N/A",
+            'unit': user.department.unit_id.unit_name if user.department and user.department.unit_id else "N/A"
+        }
+
+    # Step 2: Count each service per user
+    service_counter = defaultdict(int)
+    surveys = ClientSurvey.objects.prefetch_related('services')
+
+    for survey in surveys:
+        for service in survey.services.all():
+            key = (survey.user_id, service.service_name)
+            service_counter[key] += 1
+
+    # Step 3: Group by Unit -> Department -> List of service entries
+    grouped_result = defaultdict(lambda: defaultdict(list))
+
+    for (user_id, service_name), count in service_counter.items():
+        info = user_info_map.get(user_id, {
+            'last_name': 'Unknown',
+            'department': 'Unknown',
+            'unit': 'Unknown'
+        })
+
+        grouped_result[info['unit']][info['department']].append({
+            'user_id': user_id,
+            'last_name': info['last_name'],
+            'service': service_name,
+            'count': count
+        })
+
+    # Step 4: Print grouped results
+    for unit, departments in grouped_result.items():
+        print(f"\nUnit: {unit}")
+        for department, entries in departments.items():
+            print(f"  Department: {department}")
+            for entry in entries:
+                print(
+                    f"    User ID: {entry['user_id']}, Last Name: {entry['last_name']}, "
+                    f"Service: {entry['service']}, Count: {entry['count']}"
+                )
+
+    return render(request, 'surveys/services_count.html', {'services_count': services_count})
+
+def sqd_count(request):
+    # All SQD fields
+    sqd_fields = [f'sqd{i}' for i in range(9)]
+
+    # Dictionary to hold counts per field
+    sqd_counts = {field: defaultdict(int) for field in sqd_fields}
+
+    # Query all responses
+    surveys = ClientSurvey.objects.all().values(*sqd_fields)
+
+    # Count each value
+    for survey in surveys:
+        for field in sqd_fields:
+            value = survey[field]
+            if value is not None:
+                sqd_counts[field][value] += 1
+
+    # # Display the result
+    # for field in sqd_fields:
+    #     print(f"\n{field.upper()}:")
+    #     for rating in sorted(sqd_counts[field]):
+    #         print(f"  {rating}: {sqd_counts[field][rating]}")
+        
+    # display result with labels
+    labels = {
+        1: 'Strongly Disagree',
+        2: 'Disagree',
+        3: 'Neither Agree nor Disagree',
+        4: 'Agree',
+        5: 'Strongly Agree',
+        0: 'Not Applicable',
+    }
+    for field in sqd_fields:
+        print(f"\n{field.upper()}:")
+        for rating in sorted(sqd_counts[field]):
+            label = labels.get(rating, "Unknown")
+            print(f"  {rating} ({label}): {sqd_counts[field][rating]}")
+    
+    return render(request, 'surveys/sqd_chart.html', {'sqd_counts': sqd_counts})

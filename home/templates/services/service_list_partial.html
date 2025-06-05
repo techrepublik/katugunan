@@ -1,21 +1,22 @@
 <h2>Service List</h2>
-<button class="btn btn-success mb-3" hx-get="{% url 'home:service_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#serviceModal">Add New Service</button>
+<button class="btn btn-success mb-3" hx-get="{% url 'home:service_create' %}" hx-target="#modal-body"
+    data-toggle="modal" data-target="#serviceModal">Add New Service</button>
 
 <table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" id="service-table">
     <thead>
         <tr>
             <th>Service Name</th>
             <th>Type</th>
-            <th>Quota</th>
+            <th class="text-right">Quota</th>
             <th>Duration</th>
             <th>Payment?</th>
             <th>Position</th>
-            <th>Actions</th>
+            <th class="text-right">Actions</th>
         </tr>
     </thead>
     <tbody id="service-list">
         {% for service in services %}
-            {% include "services/service_row.html" %}
+        {% include "services/service_row.html" %}
         {% endfor %}
     </tbody>
 </table>
@@ -24,7 +25,8 @@
 <div id="notification" class="alert alert-success" style="display: none;"></div>
 
 <!-- Modal Structure -->
-<div class="modal fade" id="serviceModal" tabindex="-1" role="dialog" aria-labelledby="serviceModalLabel" aria-hidden="true">
+<div class="modal fade" id="serviceModal" tabindex="-1" role="dialog" aria-labelledby="serviceModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -41,7 +43,7 @@
 </div>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#service-table').DataTable(); // Initialize DataTables
     });
 

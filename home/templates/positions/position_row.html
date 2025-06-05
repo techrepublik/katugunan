@@ -1,9 +1,15 @@
 <tr id="position-{{position.id}}">
     <td>{{ position.position_name }}</td>
     <td>{{ position.position_short }}</td>
-    <td>{{ position.department_id }}</td>
-    <td>
-        <button class="btn btn-sm btn-secondary" hx-get="{% url 'home:position_update' position.id %}" hx-target="#modal-body" hx-trigger="click" hx-trigger="click" data-toggle="modal" data-target="#positionModal">Edit</button>
-        <button class="btn btn-sm btn-danger" hx-delete="{% url 'home:position_delete' position.id %}" hx-target="#position-{{ position.id }}" hx-swap="outerHTML" hx-confirm="Are you sure to delete this record?">Del</button>
+    <td>{{ position.position_status }}</td>
+    <td>{{ position.department.department_short_name }} - {{ position.department.unit_id.unit_short_name }} <span
+            class="badge btn-secondary">{{ position.department.unit_id.branch.branch_short_name}}</span></td>
+    <td class="text-right">
+        <button class="btn btn-sm btn-secondary" hx-get="{% url 'home:position_update' position.id %}"
+            hx-target="#modal-body" hx-trigger="click" hx-trigger="click" data-toggle="modal"
+            data-target="#positionModal">Edit</button>
+        <button class="btn btn-sm btn-danger" hx-delete="{% url 'home:position_delete' position.id %}"
+            hx-target="#position-{{ position.id }}" hx-swap="outerHTML"
+            hx-confirm="Are you sure to delete this record?">Del</button>
     </td>
 </tr>

@@ -1,18 +1,20 @@
 <h2>Position List</h2>
-<button class="btn btn-success mb-3" hx-get="{% url 'home:position_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#positionModal">Add New Position</button>
+<button class="btn btn-success mb-3" hx-get="{% url 'home:position_create' %}" hx-target="#modal-body"
+    data-toggle="modal" data-target="#positionModal">Add New Position</button>
 
 <table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" id="position-table">
     <thead>
         <tr>
             <th>Position Name</th>
             <th>Short</th>
-            <th>Unit/College</th>
-            <th>Actions</th>
+            <th>Status</th>
+            <th>Department - Unit</th>
+            <th class="text-right">Actions</th>
         </tr>
     </thead>
     <tbody id="position-list">
         {% for position in positions %}
-            {% include "positions/position_row.html" %}
+        {% include "positions/position_row.html" %}
         {% endfor %}
     </tbody>
 </table>
@@ -21,7 +23,8 @@
 <div id="notification" class="alert alert-success" style="display: none;"></div>
 
 <!-- Modal Structure -->
-<div class="modal fade" id="positionModal" tabindex="-1" role="dialog" aria-labelledby="positionModalLabel" aria-hidden="true">
+<div class="modal fade" id="positionModal" tabindex="-1" role="dialog" aria-labelledby="positionModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -38,7 +41,7 @@
 </div>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#position-table').DataTable(); // Initialize DataTables
     });
 

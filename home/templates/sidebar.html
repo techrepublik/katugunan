@@ -1,76 +1,87 @@
 {% load static %}
 <!-- templates/partials/sidebar.html -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"> <!-- Font Awesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<!-- Font Awesome -->
 
 <div class="sidebar d-flex flex-column p-3">
     <div class="text-center mb-4">
         <img src="{% static 'usm_logo.png' %}" alt="Admin Logo" width="100" height="100" class="sidebar-logo">
     </div>
     <ul class="nav flex-column">
-        
+
         <!-- Management Menu Group -->
         {% if request.user.user_level == 'Admin' or request.user.user_level == 'Super' %}
-            <li class="nav-item">
-                <a href="#managementSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-                    <i class="fas fa-user-cog"></i> <!-- Management Icon -->
-                    Management
-                </a>
-                <ul class="collapse list-unstyled ml-3" id="managementSubmenu">
-                    <li>
-                        <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:branch_list' %}" hx-target="#content-area" hx-swap="innerHTML">Branches</a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:unit_list' %}" hx-target="#content-area" hx-swap="innerHTML">Units</a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:department_list' %}" hx-target="#content-area" hx-swap="innerHTML">Departments</a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:position_list' %}" hx-target="#content-area" hx-swap="innerHTML">Positions</a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:service_list' %}" hx-target="#content-area" hx-swap="innerHTML">Services</a>
-                    </li>
-                    </li>
-                    
-                        <li>
-                            <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:user_list' %}" hx-target="#content-area" hx-swap="innerHTML">Users</a>
-                        </li>
-                    </ul>
-            </li>
-        {% endif %}
-
-        <!-- Surveys Menu Group -->
         <li class="nav-item">
-            <a href="#surveysSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-                <i class="fas fa-poll"></i> <!-- Surveys Icon -->
-                Surveys
+            <a href="#managementSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
+                <i class="fas fa-user-cog"></i> <!-- Management Icon -->
+                Management
             </a>
-            <ul class="collapse list-unstyled ml-3" id="surveysSubmenu">
-                <li><a href="#" class="nav-link submenu-link">Take Survey</a></li>
-                <li><a href="{% url "home:survey_all" %}" class="nav-link submenu-link">View Responses</a></li>
-                <li><a href="#" class="nav-link submenu-link">Survey Analytics</a></li>
-                
-            </ul>
+            <ul class="collapse list-unstyled ml-3" id="managementSubmenu">
+                <li>
+                    <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:branch_list' %}"
+                        hx-target="#content-area" hx-swap="innerHTML">Branches</a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:unit_list' %}"
+                        hx-target="#content-area" hx-swap="innerHTML">Units</a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:department_list' %}"
+                        hx-target="#content-area" hx-swap="innerHTML">Departments</a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:position_list' %}"
+                        hx-target="#content-area" hx-swap="innerHTML">Positions</a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:service_list' %}"
+                        hx-target="#content-area" hx-swap="innerHTML">Services</a>
+                </li>
         </li>
 
-        <!-- Reports Menu Group -->
-        <li class="nav-item">
-            <a href="#reportsSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-                <i class="fas fa-chart-line"></i> <!-- Reports Icon -->
-                Reports
-            </a>
-            <ul class="collapse list-unstyled ml-3" id="reportsSubmenu">
-                <li><a href="#" class="nav-link submenu-link">Monthly Report</a></li>
-                <li><a href="#" class="nav-link submenu-link">Annual Report</a></li>
-                <li><a href="#" class="nav-link submenu-link">Custom Report</a></li>
-            </ul>
+        <li>
+            <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:user_list' %}" hx-target="#content-area"
+                hx-swap="innerHTML">Users</a>
         </li>
+    </ul>
+    </li>
+    {% endif %}
 
-        <!-- Preferences Menu Group -->
-        <li class="nav-item">
+    <!-- Surveys Menu Group -->
+    <li class="nav-item">
+        <a href="#surveysSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
+            <i class="fas fa-poll"></i> <!-- Surveys Icon -->
+            Surveys
+        </a>
+        <ul class="collapse list-unstyled ml-3" id="surveysSubmenu">
+            <!-- <li><a href="{% url 'home:services_count' %}" class="nav-link submenu-link">Unit Responses</a></li>
+            <li><a href="{% url 'home:survey_all' %}" class="nav-link submenu-link">Individual Responses</a></li>
+            <li><a href="{% url 'home:sqd_count' %}" class="nav-link submenu-link">Survey Analytics</a></li>
+            <li><a href="{% url 'home:cc_chart_view' %}" class="nav-link submenu-link">CC Chart</a></li>
+            <li><a href="{% url 'home:sqd_chart_view' %}" class="nav-link submenu-link">SQD Chart</a></li>
+            <li><a href="{% url 'home:cc_combine_chart_view' %}" class="nav-link submenu-link">SQD Combine Chart</a>
+            </li> -->
+
+        </ul>
+    </li>
+
+    <!-- Reports Menu Group -->
+    <!-- <li class="nav-item">
+        <a href="#reportsSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
+            <i class="fas fa-chart-line"></i>
+            Reports
+        </a>
+        <ul class="collapse list-unstyled ml-3" id="reportsSubmenu">
+            <li><a href="#" class="nav-link submenu-link">Monthly Report</a></li>
+            <li><a href="#" class="nav-link submenu-link">Annual Report</a></li>
+            <li><a href="#" class="nav-link submenu-link">Custom Report</a></li>
+        </ul>
+    </li> -->
+
+    <!-- Preferences Menu Group -->
+    <!-- <li class="nav-item">
             <a href="#preferencesSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-                <i class="fas fa-sliders-h"></i> <!-- Preferences Icon -->
+                <i class="fas fa-sliders-h"></i> 
                 Preferences
             </a>
             <ul class="collapse list-unstyled ml-3" id="preferencesSubmenu">
@@ -78,7 +89,7 @@
                 <li><a href="#" class="nav-link submenu-link">User Profile</a></li>
                 <li><a href="#" class="nav-link submenu-link">Notifications</a></li>
             </ul>
-        </li>
+        </li> -->
     </ul>
 </div>
 
@@ -86,10 +97,11 @@
 
 
 <style>
-
     .sidebar-logo {
-        max-width: 100px; /* Adjust size as needed */
-        width: 80%; /* Responsive scaling */
+        max-width: 100px;
+        /* Adjust size as needed */
+        width: 80%;
+        /* Responsive scaling */
         margin-top: 10px;
     }
 
@@ -99,52 +111,56 @@
         min-width: 250px;
         height: 100vh;
     }
-    
+
     .sidebar a {
         color: #cfd8dc;
         padding: 10px 15px;
         text-decoration: none;
     }
-    
-    .sidebar a:hover, .sidebar a:focus {
+
+    .sidebar a:hover,
+    .sidebar a:focus {
         color: #fff;
         /* background-color: #495057; */
         background-color: rgba(255, 255, 255, 0.1);
         text-decoration: none;
     }
-    
+
     /* Smaller font size for sub-menu links 
         .submenu-link {
             font-size: 0.9rem; /* Make sub-menu text smaller */
-        }
-        
-        /* Icon alignment and spacing */
-        .nav-link i {
-            margin-right: 8px; /* Add space between icon and text */
-        }
+    }
 
-        /* Sidebar background color */
-        .sidebar {
-            background-color: #198754;
-            height: 100vh;
-            padding-top: 1rem;
-        }
+    /* Icon alignment and spacing */
+    .nav-link i {
+        margin-right: 8px;
+        /* Add space between icon and text */
+    }
 
-        /* Text color for sidebar items */
-        .sidebar .nav-link {
-            color: #FFD700;
-            /*font-weight: bold; */
-        }
+    /* Sidebar background color */
+    .sidebar {
+        background-color: #198754;
+        height: 100vh;
+        padding-top: 1rem;
+    }
 
-        /* Hover color for sidebar items */
-        .sidebar .nav-link:hover {
-            color: #DAA520;
-            background-color: rgba(255, 255, 255, 0.1); /* Optional slight background change */
-        }
+    /* Text color for sidebar items */
+    .sidebar .nav-link {
+        color: #FFD700;
+        /*font-weight: bold; */
+    }
 
-        /* Active link styling */
-        .sidebar .nav-link.active {
-            color: #DAA520;
-        }
+    /* Hover color for sidebar items */
+    .sidebar .nav-link:hover {
+        color: #DAA520;
+        background-color: rgba(255, 255, 255, 0.1);
+        /* Optional slight background change */
+    }
+
+    /* Active link styling */
+    .sidebar .nav-link.active {
+        color: #DAA520;
+    }
+
     */
 </style>

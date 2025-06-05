@@ -1,6 +1,6 @@
-
 <h2>Unit List</h2>
-<button class="btn btn-success mb-3" hx-get="{% url "home:unit_create" %}" hx-trigger="click" hx-target="#modal-body" data-toggle="modal" data-target="#unitModal">Add New Unit</button>
+<button class="btn btn-success mb-3" hx-get="{% url 'home:unit_create' %}" hx-trigger="click" hx-target="#modal-body"
+    data-toggle="modal" data-target="#unitModal">Add New Unit</button>
 
 <table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" id="unit-table">
     <thead>
@@ -9,12 +9,12 @@
             <th>Unit Short</th>
             <th>Branch</th>
             <th>Unit Type</th>
-            <th>Actions</th>
+            <th class="text-right">Actions</th>
         </tr>
     </thead>
     <tbody id="unit-list">
         {% for unit in units %}
-            {% include "units/unit_row.html" %}
+        {% include "units/unit_row.html" %}
         {% endfor %}
     </tbody>
 </table>
@@ -33,13 +33,13 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
 
 <script>
-    
-    $(document).ready(function() {
+
+    $(document).ready(function () {
         $('#unit-table').DataTable(); // Initialize DataTables
     });
 
-   
+
 </script>

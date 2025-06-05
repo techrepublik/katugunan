@@ -161,7 +161,8 @@ class PositionForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'position_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter position name'}),
-            'position_short': forms.TextInput(attrs={'class': 'form-contol', 'placeholder': 'Enter short name'})
+            'position_short': forms.TextInput(attrs={'class': 'form-contol', 'placeholder': 'Enter short name'}),
+            'position_status': forms.Select(attrs={'class': 'form-control'}),
         }
 
 

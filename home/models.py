@@ -73,6 +73,7 @@ class Position(models.Model):
         Department, on_delete=models.SET_NULL, blank=True, null=True)
     position_name = models.CharField(max_length=150)
     position_short = models.CharField(max_length=50, blank=True, null=True)
+    position_status = models.CharField(max_length=20, choices=[('Permanent','Permanent'), ('COS', 'COS'), ('JO','JO')], default='Permanent')
 
     def __str__(self) -> str:
         return self.position_name

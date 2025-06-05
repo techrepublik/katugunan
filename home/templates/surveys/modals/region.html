@@ -1,0 +1,331 @@
+<body>
+    <div class="row mb-2">
+        <div class="col-md-12">
+            <div class="card mb-2">
+                <div class="card-header card-bg text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button id="refreshChartBtn" class="btn btn-sm btn-warning">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <span>SURVEY DISTRIBUTION BY REGION (MONHTLY/YEARLY)</span>
+                        <span class="ms-auto"></span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="viewSwitch">
+                            <label class="custom-control-label" id="toggleLabel" for="viewSwitch">Switch to
+                                Unit/Department
+                                view.</label>
+                        </div>
+                        <select id="yearSelect" class="form-control w-auto" name="year_region1">
+                            <option value="" selected>Select Year</option>
+                            {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                            {% endfor %}
+                        </select>
+                        <!-- {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto"
+                            hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change"
+                            hx-include="[name='year_bar']">
+                            <option value="">All years</option>
+                        </select> {% endcomment %} -->
+                    </div>
+                </div>
+                <div class="card-body" id="regionBarChart">
+                    <!-- Region Chart -->
+                    <div id="regionLineChartContainer" class="mt-3">
+                        <div class="row h-100 justify-content-center align-items-center">
+                            <canvas id="regionLineChart" class="chart-canvas"></canvas>
+                        </div>
+                        <div class="mt-4">
+                            <h5>Survey Summary Table</h5>
+                            <div class="scroll-div">
+                                <table class="table table-bordered table-sm table-striped">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Region</th>
+                                            <th>Survey Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="summaryTableBody">
+                                        <!-- Rows will be dynamically inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Unit/Department Chart -->
+                    <div id="unitLineChartContainer" class="mt-3" style="display: none;">
+                        <div class="row h-100 justify-content-center align-items-center">
+                            <canvas id="unitLineChart" class="chart-canvas"></canvas>
+                        </div>
+                        <div class="mt-4">
+                            <h5>Survey Summary by Unit and Department</h5>
+                            <div class="scroll-div">
+                                <table class="table table-bordered table-sm table-striped">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Unit</th>
+                                            <th>Department</th>
+                                            <th>Survey Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="unitDeptSummaryTable">
+                                        <!-- Rows will be inserted by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+
+<script>
+    // if (typeof window.regionChartInstance === 'undefined') {
+    //     window.regionChartInstance = null;
+    // }
+
+    // function renderRegionMonthly(data) {
+    //     const ctx = document.getElementById('regionLineChart').getContext('2d');
+
+    //     if (window.regionChartInstance) {
+    //         window.regionChartInstance.destroy();
+    //     }
+
+    //     window.regionChartInstance = new Chart(ctx, {
+    //         type: 'line',
+    //         data: {
+    //             labels: data.labels,
+    //             datasets: data.datasets
+    //         },
+    //         options: {
+    //             responsive: true,
+    //             interaction: {
+    //                 mode: 'index',
+    //                 intersect: false
+    //             },
+    //             stacked: false,
+    //             scales: {
+    //                 y: {
+    //                     beginAtZero: true,
+    //                     ticks: { precision: 0 },
+    //                     title: {
+    //                         display: true,
+    //                         text: 'Survey Count'
+    //                     }
+    //                 },
+    //                 x: {
+    //                     title: {
+    //                         display: true,
+    //                         text: 'Month-Year'
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     });
+    // }
+
+    // // Hook into HTMX modal content load
+    // document.addEventListener('htmx:afterSwap', function (event) {
+
+    //     if (event.detail.target.id === "modal-body") {
+    //         fetch("{% url 'home:region_monhtly_survey_view' %}")
+    //             .then(response => response.json())
+    //             .then(data => {
+    //                 renderRegionMonthly(data);
+    //             });
+    //     }
+    // });
+
+    function populateSummaryTable(data) {
+        const tbody = document.getElementById('summaryTableBody');
+        tbody.innerHTML = '';  // Clear previous
+
+        const labels = data.labels;
+        const datasets = data.datasets;
+
+        labels.forEach((month, index) => {
+            datasets.forEach(region => {
+                const count = region.data[index];
+                if (count > 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td>${month}</td>
+                    <td>${region.label}</td>
+                    <td>${count}</td>
+                `;
+                    tbody.appendChild(row);
+                }
+            });
+        });
+    }
+
+    function populateUnitDeptSummaryTable(data) {
+        const tbody = document.getElementById('unitDeptSummaryTable');
+        tbody.innerHTML = '';  // Clear any previous rows
+
+        if (!data.summary || data.summary.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="4" class="text-center">No data available</td>`;
+            tbody.appendChild(row);
+            return;
+        }
+
+        data.summary.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+            <td>${item.month}</td>
+            <td>${item.unit}</td>
+            <td>${item.department}</td>
+            <td>${item.count}</td>
+        `;
+            tbody.appendChild(row);
+        });
+    }
+
+
+
+
+
+    // Declare globals safely
+    window.chartInstanceRegion = window.chartInstanceRegion || null;
+    window.chartInstanceUnit = window.chartInstanceUnit || null;
+    if (typeof window.currentYear === 'undefined') window.currentYear = '';
+
+    function loadChart(url, canvasId, chartName) {
+        const fullUrl = currentYear ? `${url}?year=${currentYear}` : url;
+
+        fetch(fullUrl)
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                populateSummaryTable(data);
+                populateUnitDeptSummaryTable(data);
+                // Destroy any existing chart for this view
+                if (window[chartName]) {
+                    window[chartName].destroy();
+                }
+
+                // Create the new chart
+                window[chartName] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: data.datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        stacked: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Survey Count'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Month-Year'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+    }
+
+    function updateVisibleChart() {
+        const toggle = document.getElementById('viewSwitch').checked;
+
+        // Change label dynamically
+        const label = document.getElementById('toggleLabel');
+        if (toggle) {
+            label.textContent = "Unit/Department View";
+        } else {
+            label.textContent = "General View";
+        }
+
+        // Show/hide canvas
+        document.getElementById('regionLineChartContainer').style.display = toggle ? 'none' : 'block';
+        document.getElementById('unitLineChartContainer').style.display = toggle ? 'block' : 'none';
+
+        if (toggle) {
+            // Unit/Dept view
+            loadChart("{% url 'home:region_unit_dept_monhtly_survey_view' %}", 'unitLineChart', 'chartInstanceUnit');
+        } else {
+            // Region view
+            loadChart("{% url 'home:region_monhtly_survey_view' %}", 'regionLineChart', 'chartInstanceRegion');
+        }
+    }
+
+    function waitForCanvasAndRenderChart(retries = 10) {
+        const regionCanvas = document.getElementById('regionLineChart');
+        const unitCanvas = document.getElementById('unitLineChart');
+
+        if ((regionCanvas || unitCanvas) && retries > 0) {
+            updateVisibleChart();
+        } else if (retries > 0) {
+            setTimeout(() => waitForCanvasAndRenderChart(retries - 1), 100); // retry until canvas is ready
+        } else {
+            console.warn("Canvas element not found after waiting.");
+        }
+    }
+
+    // ✅ HTMX Modal Chart Initialization
+    document.addEventListener('htmx:afterSwap', function (event) {
+        if (event.detail.target.id === "modal-body") {
+            // Initialize globals if needed
+            if (typeof window.chartInstanceRegion === 'undefined') window.chartInstanceRegion = null;
+            if (typeof window.chartInstanceUnit === 'undefined') window.chartInstanceUnit = null;
+            if (typeof window.currentYear === 'undefined') window.currentYear = '';
+
+            // Attach event listeners safely
+            const toggle = document.getElementById('viewSwitch');
+            const yearDropdown = document.getElementById('yearSelect');
+            const refreshButton = document.getElementById('refreshChartBtn');
+
+            if (toggle && !toggle.dataset.bound) {
+                toggle.addEventListener('change', () => updateVisibleChart());
+                toggle.dataset.bound = "true";
+            }
+
+            if (yearDropdown && !yearDropdown.dataset.bound) {
+                yearDropdown.addEventListener('change', function () {
+                    window.currentYear = this.value;
+                    updateVisibleChart();
+                });
+                yearDropdown.dataset.bound = "true";
+            }
+
+            if (refreshButton && !refreshButton.dataset.bound) {
+                refreshButton.addEventListener('click', () => {
+                    waitForCanvasAndRenderChart();  // Retry safe reload
+                });
+                refreshButton.dataset.bound = "true";
+            }
+
+            waitForCanvasAndRenderChart();  // now safe to call chart rendering
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target && e.target.id === 'refreshChartBtn') {
+            waitForCanvasAndRenderChart();
+        }
+    });
+
+
+</script>

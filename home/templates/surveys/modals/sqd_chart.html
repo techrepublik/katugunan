@@ -1,0 +1,112 @@
+<body>
+    <h5>Citizen Charter</h5>
+    <div class="row mb-2">
+        <div class="col-md-12">
+            <div class="card mb-2">
+                <div class="card-header card-bg text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button id="refreshChartBtn" class="btn btn-sm btn-warning">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <span>SQD SERVICE DISTRIBUTION</span>
+                        <span class="ms-auto"></span>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="viewSwitch">
+                            <label class="custom-control-label" id="toggleLabel" for="viewSwitch">Switch to
+                                Unit/Department
+                                view.</label>
+                        </div>
+                        <select id="yearSelectSQD" class="form-control w-auto" name="year_sqd">
+                            <option value="" selected>Select Year</option>
+                            {% for year in years %}
+                            <option value="{{ year.year }}">{{ year.year }}</option>
+                            {% endfor %}
+                        </select>
+                        <!-- {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto"
+                            hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change"
+                            hx-include="[name='year_bar']">
+                            <option value="">All years</option>
+                        </select> {% endcomment %} -->
+                    </div>
+                </div>
+                <div class="card-body" id="regionBarChart">
+                    <!-- Region Chart -->
+                    <!-- <div id="sqdChartContainer" class="mt-3">
+                        <canvas id="sqdSummaryChart" class="chart-canvas"></canvas>
+                    </div> -->
+                    <div id="sqdChartContainer1" class="mt-3">
+                        <canvas id="unitDeptSQDChart" class="chart-canvas"></canvas>
+                    </div>
+
+                    <div id="sqdChartScriptContainer">
+                        <!-- Chart script loads here -->
+                        <script>
+                            if (typeof sqdChartInstance !== 'undefined') {
+                                sqdChartInstance.destroy();
+                            }
+
+                            fetch("{% url 'home:sqd_chart_unit_dept_modal_view' %}?year_sqd=2025")
+                                .then(res => res.json())
+                                .then(data => {
+                                    const ctx = document.getElementById('unitDeptSQDChart').getContext('2d');
+
+                                    new Chart(ctx, {
+                                        type: 'bar',
+                                        data: {
+                                            labels: data.labels,
+                                            datasets: data.datasets
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+
+                                            plugins: {
+                                                // title: {
+                                                //     display: true,
+                                                //     text: 'SQD Ratings Grouped by Unit and Department'
+                                                // },
+                                                tooltip: {
+                                                    mode: 'index',
+                                                    intersect: false
+                                                },
+                                                legend: {
+                                                    position: 'top'
+                                                }
+                                            },
+                                            interaction: {
+                                                mode: 'nearest',
+                                                axis: 'x',
+                                                intersect: false
+                                            },
+                                            scales: {
+                                                y: {
+                                                    stacked: true,
+                                                    beginAtZero: true,
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Responses'
+                                                    }
+                                                },
+                                                x: {
+                                                    stacked: true,
+                                                    title: {
+                                                        display: true,
+                                                        text: 'Unit - Department'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+                        </script>
+                    </div>
+                    <!-- Unit/Department Chart -->
+                    <!-- <div id="unitLineChartContainer" class="mt-3" style="display: none;">
+                        <canvas id="unitLineChart" class="chart-canvas"></canvas>
+                    </div> -->
+                    {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>

@@ -1,18 +1,20 @@
 <h2>Department List</h2>
-<button class="btn btn-success mb-3" hx-get="{% url 'home:department_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#departmentModal">Add New Department</button>
+<button class="btn btn-success mb-3" hx-get="{% url 'home:department_create' %}" hx-target="#modal-body"
+    data-toggle="modal" data-target="#departmentModal">Add New Department</button>
 
-<table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4" id="department-table">
+<table class="display compact m-auto table table-sm table-hover table-striped table-bordered mt-4"
+    id="department-table">
     <thead>
         <tr>
             <th>Department Name</th>
             <th>Department Short</th>
             <th>Unit/College</th>
-            <th>Actions</th>
+            <th class="text-right">Actions</th>
         </tr>
     </thead>
     <tbody id="department-list">
         {% for department in departments %}
-            {% include "departments/department_row.html" %}
+        {% include "departments/department_row.html" %}
         {% endfor %}
     </tbody>
 </table>
@@ -21,7 +23,8 @@
 <div id="notification" class="alert alert-success" style="display: none;"></div>
 
 <!-- Modal Structure -->
-<div class="modal fade" id="departmentModal" tabindex="-1" role="dialog" aria-labelledby="departmentModalLabel" aria-hidden="true">
+<div class="modal fade" id="departmentModal" tabindex="-1" role="dialog" aria-labelledby="departmentModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -38,7 +41,7 @@
 </div>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#department-table').DataTable(); // Initialize DataTables
     });
 
