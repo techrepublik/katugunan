@@ -1,0 +1,308 @@
+<style>
+    #custom-search-container {
+        width: auto;
+    }
+
+    #survey-summary {
+        font-size: 1rem;
+        color: #2b2b2b;
+    }
+
+    .modal-dialog {
+        margin-top: 30px !important;
+    }
+
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+</style>
+
+
+<h5>Personnel List</h5>
+<hr>
+<div class="d-flex align-items-center gap-3 mb-3">
+    <div class="d-flex align-items-center">
+        <label for="filter-sex">Filter by Sex</label>
+        <select id="filter-sex" class="form-select form-select-sm ml-3" name="sex">
+            <option value="">All</option>
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+        </select>
+    </div>
+    <div class="d-flex align-items-center ml-3">
+        <label for="filter-region">by Region</label>
+        <select id="filter-region" class="form-select form-select-sm ml-3">
+            <option value="">All</option>
+            <option value="NCR">NCR</option>
+            <option value="CAR">CAR</option>
+            <option value="Region I">Region I</option>
+            <option value="Region II">Region II</option>
+            <option value="Region III">Region III</option>
+            <option value="Region IV-A">Region IV-A</option>
+            <option value="Region IV-B">Region IV-B</option>
+            <option value="Region V">Region V</option>
+            <option value="Region VI">Region VI</option>
+            <option value="Region VII">Region VII</option>
+            <option value="Region VIII">Region VIII</option>
+            <option value="Region IX">Region IX</option>
+            <option value="Region X">Region X</option>
+            <option value="Region XI">Region XI</option>
+            <option value="Region XII">Region XII</option>
+            <option value="Region XIII">Region XIII</option>
+            <option value="BARMM">BARMM</option>
+            <!-- Add more if needed -->
+        </select>
+    </div>
+</div>
+
+<div class="d-flex align-items-center gap-3 mb-3">
+    <div class="d-flex align-items-center">
+        <label for="filter-start" class="me-2 mb-0 fw-semibold">Start</label>
+        <input type="date" id="filter-start" class="form-control form-control-sm ml-3">
+    </div>
+    <div class="d-flex align-items-center ml-3">
+        <label for="filter-end" class="me-2 mb-0 fw-semibold">End</label>
+        <input type="date" id="filter-end" class="form-control form-control-sm ml-3">
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <button id="clear-filters" class="btn btn-secondary btn-sm w-100">
+            Clear Filters
+        </button>
+    </div>
+</div>
+
+<hr>
+
+<!-- Container for header controls -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <div id="custom-search-container"></div>
+    <div id="survey-summary" class="fw-bold"></div>
+</div>
+
+<!-- templates/users/user_list.html -->
+<table id="users-table" class="display nowrap table-sm" style="width:100%">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Sex</th>
+            <th>Registered</th>
+            <th>Surveys</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+</table>
+
+<div class="modal fade" id="userStatsModal" tabindex="-1" aria-labelledby="userStatsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userStatsModalLabel">User Survey Statistics</h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-left mb-3" id="user-picture-container" style="display: none;">
+                    <img id="user-picture" src="" alt="User Picture" class="img-thumbnail rounded-circle"
+                        style="width: 120px; height: 120px; object-fit: cover;">
+                </div>
+
+                <div id="user-stats-content">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+
+        let table = $('#users-table').DataTable({
+            processing: true,
+            serverSide: true,
+            paging: true,
+            scrollY: '500px',
+            scrollCollapse: true,
+            deferRender: true,
+            scroller: true,
+            ajax: {
+                url: "{% url 'home:user_data_api' %}",
+                type: "GET",
+                data: function (d) {
+                    d.sex = $('#filter-sex').val();
+                    d.region = $('#filter-region').val();
+                    d.start_date = $('#filter-start').val();
+                    d.end_date = $('#filter-end').val();
+                },
+                // dataSrc: function (json) {
+                //     // ✅ Update total survey summary
+                //     $('#survey-summary').text(`Total Surveys: ${json.total_survey_count || 0}`);
+                //     return json.data;
+                // }
+            },
+            columns: [
+                { data: "email" },
+                { data: "first_name" },
+                { data: "last_name" },
+                { data: "sex" },
+                { data: "registered_on" },
+                {
+                    data: "survey_count",
+                    render: function (data) {
+                        const max = 50;
+                        const width = Math.min((data / max) * 100, 100);
+                        let color = "bg-success";
+                        if (data < 30) color = "bg-danger";
+                        else if (data < 50) color = "bg-warning";
+                        return `
+                            <div class="progress" style="height: 18px;">
+                                <div class="progress-bar ${color}" style="width: ${width}%">
+                                ${data}
+                                </div>
+                            </div>`;
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: function (data, type, row) {
+                        return `<button class="btn btn-sm btn-info view-btn" data-user='${JSON.stringify(row)}'>View</button>
+                        <button class="btn btn-sm btn-secondary stat-btn" data-userid="${row.user_id}">Stats</button>`;
+                    }
+                }
+            ]
+        });
+
+        // Trigger reload when filters change
+        $('#filter-sex, #filter-region, #filter-start, #filter-end').on('change', function () {
+            table.ajax.reload();
+        });
+
+        // Move the global search to the left and resize
+        $("#users-table_filter").detach().appendTo("#custom-search-container");
+        $("#users-table_filter input").css("width", "260px"); // original ~160px + 100px
+
+        $('#clear-filters').on('click', function () {
+            // Reset all filter inputs
+            $('#filter-sex').val('');
+            $('#filter-region').val('');
+            $('#filter-start').val('');
+            $('#filter-end').val('');
+
+            // Redraw the table
+            table.ajax.reload();
+        });
+
+        let sqdChartInstance = null;
+
+        $('#users-table tbody').on('click', '.stat-btn', function () {
+            const userId = $(this).data('userid');
+            $('#user-stats-content').html('Loading...');
+
+            // Get date range from the parent form inputs
+            const dateStart = $('#filter-start').val();
+            const dateEnd = $('#filter-end').val();
+
+            $.ajax({
+                url: `/api/survey-user-stat/${userId}/`,
+                type: 'GET',
+                data: {
+                    start_date: dateStart,
+                    date_end: dateEnd
+                },
+                success: function (data) {
+                    // Show user picture if available
+                    if (data.picture_url) {
+                        $('#user-picture').attr('src', data.picture_url);
+                        $('#user-picture-container').show();
+                    } else {
+                        $('#user-picture-container').hide();
+                    }
+
+                    // Build the feedback table
+                    let feedbackHtml = '';
+                    if (data.feedbacks.length > 0) {
+                        feedbackHtml = `
+                        <div class="mt-4">
+                            <h6>Survey Feedback</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead><tr><th>Suggestion</th><th>Email</th></tr></thead>
+                                <tbody>`;
+                        data.feedbacks.forEach(fb => {
+                            feedbackHtml += `<tr><td>${fb.suggestion || '-'}</td><td>${fb.email || '-'}</td></tr>`;
+                        });
+                        feedbackHtml += '</tbody></table></div>';
+                    }
+
+                    const labels = Object.keys(data.sqd_averages).map(k => k.toUpperCase());
+                    const values = Object.values(data.sqd_averages);
+
+                    const summaryHtml = `
+                            <p><strong>User ID:</strong> ${data.user_id}</p>
+                            <p><strong>Name:</strong> ${data.last_name}, ${data.first_name}</p>
+                            <p><strong>Email:</strong> ${data.email}</p>
+                            <p><strong>Total Surveys:</strong> ${data.total_surveys}</p>
+                            <p><strong>Region:</strong> ${data.region}</p>
+                            <p><strong>Sex:</strong> ${data.sex}</p>
+                            <table class="table table-sm table-bordered mt-3">
+                            <thead><tr><th>SQD</th><th>Average</th></tr></thead><tbody>
+                            ${Object.entries(data.sqd_averages).map(
+                        ([sqd, val]) => `<tr><td>${sqd.toUpperCase()}</td><td>${val}</td></tr>`
+                    ).join('')}
+                                            </tbody></table>`;
+
+                    $('#user-stats-content').html(`
+                    ${summaryHtml}
+                            <div class="mb-3">
+                            <canvas id="sqdChart" height="200"></canvas>
+                            </div>
+                    ${feedbackHtml}`);
+
+
+                    // ✅ Defer chart creation until DOM update is finished
+                    setTimeout(() => {
+                        const ctx = document.getElementById('sqdChart').getContext('2d');
+                        if (sqdChartInstance) sqdChartInstance.destroy();
+                        sqdChartInstance = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Average SQD Score',
+                                    data: values,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 5
+                                    }
+                                }
+                            }
+                        });
+                    }, 0); // Let the DOM apply updates first
+
+                    new bootstrap.Modal(document.getElementById('userStatsModal')).show();
+                },
+
+                error: function () {
+                    $('#user-stats-content').html('<p class="text-danger">Unable to load stats.</p>');
+                }
+            });
+        });
+
+
+    });
+</script>

@@ -54,8 +54,9 @@
             Surveys
         </a>
         <ul class="collapse list-unstyled ml-3" id="surveysSubmenu">
-            <!-- <li><a href="{% url 'home:services_count' %}" class="nav-link submenu-link">Unit Responses</a></li>
-            <li><a href="{% url 'home:survey_all' %}" class="nav-link submenu-link">Individual Responses</a></li>
+            <li><a href="#" class="nav-link submenu-link" hx-get="{% url 'home:result_user_list' %}"
+                    hx-target="#content-area" hx-swap="innerHTML">Personnel List</a></li>
+            <!-- <li><a href="{% url 'home:survey_all' %}" class="nav-link submenu-link">Individual Responses</a></li>
             <li><a href="{% url 'home:sqd_count' %}" class="nav-link submenu-link">Survey Analytics</a></li>
             <li><a href="{% url 'home:cc_chart_view' %}" class="nav-link submenu-link">CC Chart</a></li>
             <li><a href="{% url 'home:sqd_chart_view' %}" class="nav-link submenu-link">SQD Chart</a></li>

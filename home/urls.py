@@ -1,7 +1,6 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
-from . import views
-from . import chart_views
+from . import views, chart_views, views_result
 
 app_name = 'home'
 urlpatterns = [
@@ -100,4 +99,11 @@ urlpatterns = [
     path('surveys/sqd-chart-modal/', chart_views.sqd_chart_modal, name='sqd_chart_modal'),
     path('surveys/sqd-chart-view/', chart_views.sqd_chart_modal_view, name='sqd_chart_modal_view'),
     path('surveys/sqd-chart-unit-dept-view/', chart_views.sqd_grouped_by_unit_department_view, name='sqd_chart_unit_dept_modal_view'),
+    path('surveys/transaction-chart-unit-dept-modal/', chart_views.transaction_chart_modal, name='transaction_chart_unit_dept_modal'),
+    path('surveys/transaction-chart-unit-dept-modal-view/', chart_views.transaction_types_by_unit_department, name='transaction_chart_unit_dept_modal_view'),
+
+    path('surveys/results/user-list/', views_result.user_table_view, name='result_user_list'),
+    path('api/users/', views_result.user_data_api, name='user_data_api'),
+    path('api/survey-user-stat/<str:user_id>/', views_result.survey_user_stat_detail, name='survey_user_stat_detail'),
+
 ]

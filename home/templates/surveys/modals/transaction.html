@@ -1,0 +1,103 @@
+<div class="row mb-2">
+    <!-- CC1 Distribution Chart -->
+    <div class="col-md-12">
+        <div class="card mb-2">
+            <div class="card-header card-bg text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <button id="refreshChartBtn" class="btn btn-sm btn-warning">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <span>TRANSACTION DISTRIBUTION</span>
+                    <span class="ms-auto"></span>
+                    {% comment %} <a href="{% url 'home:generate_status_chart_pdf' %}"
+                        class="btn btn-sm btn-warning w-auto">Report (Pdf)</a> {% endcomment %}
+                    <select id="yearSelectTransaction1" class="form-control w-auto" name="year_transaction1"
+                        hx-get="{% url 'home:transaction_chart_unit_dept_modal_view'%}" hx-target="#transactionChart1"
+                        hx-include="[name='year_transaction1']"
+                        hx-trigger="change from:#yearSelectTransaction1 changed delay:100ms">
+                        <option value="" selected>Select Year</option>
+                        {% for year in years %}
+                        <option value="{{ year.year }}">{{ year.year }}</option>
+                        {% endfor %}
+                    </select>
+                    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto"
+                        hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change"
+                        hx-include="[name='year_bar']">
+                        <option value="">All years</option>
+                    </select> {% endcomment %}
+                </div>
+            </div>
+            <div class="card-body" id="transactionBarChart">
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div></div>
+                </div>
+                <canvas id="transactionChart1" height="600px;"></canvas>
+                <div id="summaryTable">
+
+                </div>
+                {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (window.transactionChartInstance) {
+        window.transactionChartInstance.destroy();
+    }
+
+    function renderTransactionChart(data) {
+        const ctx = document.getElementById('transactionChart1').getContext('2d');
+        myData = JSON.parse(data);
+        window.transactionChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: myData.labels,
+                datasets: myData.datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Transaction Types by Unit + Department'
+                    },
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Unit - Department'
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Transaction Count'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Event listener to handle HTMX response for the chart
+    document.addEventListener('htmx:afterOnLoad', (event) => {
+        const responseData = event.detail.xhr.response;
+        // renderRegion(responseData);
+        if (event.detail.target.id === "transactionChart1") {
+            renderTransactionChart(responseData);
+        }
+    });
+</script>

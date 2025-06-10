@@ -1,0 +1,123 @@
+<body>
+    <h5>Survey Distribution</h5>
+    <div class="card mb-2">
+        <div class="card-header card-bg text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><button class="btn btn-warning"><i class="fas fa-project-diagram"></i></button></span>
+                <span>SURVEY DISTRIBUTION OVER TIME</span>
+                <span class="ms-auto"></span>
+                <select id="yearSelectSurvey1" class="form-control w-auto" name="year_survey1"
+                    hx-get="{% url 'home:survey_chart_monthly_view'%}" hx-target="#surveyChart1"
+                    hx-include="[name='year_survey1']" hx-trigger="change from:#yearSelectSurvey1 changed delay:100ms">
+                    <option value="" selected>Select Year</option>
+                    {% for year in years %}
+                    <option value="{{ year.year }}">{{ year.year }}</option>
+                    {% endfor %}
+                </select>
+                {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto"
+                    hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change"
+                    hx-include="[name='year_bar']">
+                    <option value="">All years</option>
+                </select> {% endcomment %}
+            </div>
+        </div>
+        <div class="card-body" id="citizenCharterBarChart">
+            <div class="loading-spinner" id="loadingSpinnerSurvey1">
+                <div></div>
+            </div>
+            <canvas id="surveyChart1"></canvas>
+            <div id="chartSection1">
+
+            </div>
+            {% comment %} <div id="chart-data" hx-swap="outerHTML:swap"></div> {% endcomment %}
+        </div>
+    </div>
+</body>
+
+<script>
+
+
+    // Survey Instances
+    function renderSurveyChart1(data) {
+        const ctxSurveyChart = document.getElementById("surveyChart1").getContext('2d');
+
+        // Show loading spinner
+        document.getElementById('loadingSpinnerSurvey1').style.display = 'flex';
+        document.getElementById('surveyChart1').style.display = 'none';
+
+        // Simulate data processing delay
+        setTimeout(() => {
+            // Hide loading spinner and show chart
+            document.getElementById('loadingSpinnerSurvey1').style.display = 'none';
+            document.getElementById('surveyChart1').style.display = 'block';
+
+            dtx = JSON.parse(data);
+
+            // Create chart instance
+            const datasets = [
+                {
+                    label: 'Total Surveys',
+                    data: dtx.data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                ...dtx.unit_datasets.map(unit => ({
+                    label: unit.label,
+                    data: unit.data,
+                    borderWidth: 1,
+                    backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.5)`
+                }))
+            ];
+
+            surveyChartInstance = new Chart(ctxSurveyChart, {
+                type: 'line',
+                data: {
+                    labels: dtx.labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        // title: {
+                        //     display: true,
+                        //     text: 'Survey Counts per Month'
+                        // },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Survey Count'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            }
+                        }
+                    }
+                }
+            });
+        }, 1000); // Simulate 1-seco
+    }
+
+    // Event listener to handle HTMX response for the chart
+    document.addEventListener('htmx:afterOnLoad', (event) => {
+        const responseData = event.detail.xhr.response;
+        // renderRegion(responseData);
+        if (event.detail.target.id === "surveyChart1") {
+            renderSurveyChart1(responseData);
+        }
+    });
+</script>

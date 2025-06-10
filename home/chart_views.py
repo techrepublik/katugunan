@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
 from collections import defaultdict
+from datetime import datetime
 from django.db.models.functions import ExtractYear
 from django.shortcuts import render
 from .models import *
@@ -190,7 +191,7 @@ def survey_per_month_chart(request):
     else:
         data = ClientSurvey.objects.all()
 
-    # Group surveys by month using TruncMonth
+    # Group surveys by month
     monthly_data = (
         data.annotate(month=TruncMonth('created_on'))
         .values('month')
@@ -198,13 +199,38 @@ def survey_per_month_chart(request):
         .order_by('month')
     )
 
-    # Extract labels and data
     labels = [entry['month'].strftime("%B %Y") for entry in monthly_data]
-    data = [entry['count'] for entry in monthly_data]
+    total_counts = [entry['count'] for entry in monthly_data]
+
+    # Group by unit per month
+    unit_month_counts = defaultdict(lambda: defaultdict(int))
+    surveys = data.annotate(month=TruncMonth('created_on')).values('month', 'user_id')
+
+    user_map = {
+        user.user_id: user.department.unit_id.unit_short_name if user.department and user.department.unit_id else 'N/A'
+        for user in CustomUser.objects.select_related('department__unit_id')
+    }
+
+    for survey in surveys:
+        user_id = survey.get('user_id')
+        unit = user_map.get(user_id, 'Unknown')
+        month = survey['month'].strftime("%B %Y")
+        unit_month_counts[unit][month] += 1
+
+    # Construct datasets per unit
+    units = list(unit_month_counts.keys())
+    unit_datasets = []
+    for unit in units:
+        unit_data = [unit_month_counts[unit].get(label, 0) for label in labels]
+        unit_datasets.append({
+            'label': unit,
+            'data': unit_data
+        })
 
     context = {
         'labels': labels,
-        'data': data,
+        'data': total_counts,
+        'unit_datasets': unit_datasets,
     }
 
     return JsonResponse(context)
@@ -506,3 +532,104 @@ def sqd_grouped_by_unit_department_view(request):
         })
 
     return JsonResponse(chart_data)
+
+
+### transaction
+def transaction_chart_modal(request):
+    # years = ClientSurvey.objects.dates('created_on', 'year').distinct()
+    years = ClientSurvey.objects.annotate(year=ExtractYear(
+        'created_on')).values('year').distinct().order_by('-year')
+    # year_list = sorted(set(dt.year for dt in years))
+    return render(request, 'surveys/modals/transaction.html', {
+        'years': years
+    })
+
+def transaction_types_grouped_by_unit_department(request):
+    year = request.GET.get('year_transaction1')
+    surveys = ClientSurvey.objects.all()
+    if year:
+        surveys = surveys.filter(created_on__year=year)
+
+    user_map = {}
+    for user in CustomUser.objects.select_related('department__unit_id').all():
+        unit = user.department.unit_id.unit_short_name if user.department and user.department.unit_id else 'Unknown Unit'
+        department = user.department.department_name if user.department else 'Unknown Department'
+        user_map[user.user_id] = f"{unit} - {department}"
+
+    grouped_data = defaultdict(lambda: defaultdict(int))
+    summary_data = defaultdict(lambda: defaultdict(int))
+
+    for survey in surveys:
+        month = survey.created_on.strftime('%B %Y')
+        group = user_map.get(survey.user_id, 'Unknown Unit - Unknown Department')
+        count = len(survey.transaction_types) if isinstance(survey.transaction_types, list) else 0
+        grouped_data[group][month] += count
+        summary_data[group][month] += count
+
+    all_months = sorted({m for g in grouped_data.values() for m in g.keys()}, key=lambda x: datetime.strptime(x, '%B %Y'))
+    all_groups = sorted(grouped_data.keys())
+
+    datasets = []
+    for group in all_groups:
+        datasets.append({
+            'label': group,
+            'data': [grouped_data[group].get(month, 0) for month in all_months],
+            'stack': 'stack1'
+        })
+
+    return JsonResponse({
+        'labels': all_months,
+        'datasets': datasets,
+        'groups': all_groups,
+        'summary_data': summary_data
+    })
+
+def transaction_types_by_unit_department(request):
+    year = request.GET.get('year_transaction1')
+    surveys = ClientSurvey.objects.all()
+    if year:
+        surveys = surveys.filter(created_on__year=year)
+
+    # Map user_id to Unit + Department
+    user_map = {}
+    for user in CustomUser.objects.select_related('department__unit_id'):
+        unit = user.department.unit_id.unit_short_name if user.department and user.department.unit_id else 'Unknown Unit'
+        department = user.department.department_name if user.department else 'Unknown Department'
+        user_map[user.user_id] = f"{unit} - {department}"
+
+    # Collect all unique transaction types from form choices
+    all_transaction_types = [
+        'Application/Request of Documents',
+        'Bills/Fees Payment',
+        'Inquiry on Services',
+        'Submission of Documents',
+        'Delivery of Supplies',
+        'Filing of Complaints',
+        'Follow-up on Request/Complaint',
+        'Research Concerns',
+        'Other'
+    ]
+
+    grouped_data = defaultdict(lambda: defaultdict(int))  # group -> transaction_type -> count
+
+    for survey in surveys:
+        group = user_map.get(survey.user_id, 'Unknown Unit - Unknown Department')
+        if isinstance(survey.transaction_types, list):
+            for t_type in survey.transaction_types:
+                grouped_data[group][t_type] += 1
+
+    sorted_groups = sorted(grouped_data.keys())
+    datasets = []
+
+    # Build datasets per transaction type
+    for t_type in all_transaction_types:
+        datasets.append({
+            'label': t_type,
+            'data': [grouped_data[group].get(t_type, 0) for group in sorted_groups],
+            'stack': 'stack1'
+        })
+
+    return JsonResponse({
+        'labels': sorted_groups,
+        'datasets': datasets
+    })
