@@ -12,7 +12,7 @@
 
     .loading-spinner div {
         border: 4px solid #f3f3f3;
-        border-top: 4px solid #4CAF50;
+        border-top: 4px solid #046a38;
         border-radius: 50%;
         width: 50px;
         height: 50px;
@@ -38,9 +38,37 @@
         height: 200px;
         overflow-y: scroll;
     }
+
+    /* Gradient Styles */
+    .gradient-emerald {
+        background: linear-gradient(135deg, #046a38 0%, #03522b 100%) !important;
+        color: #ffffff !important;
+    }
+    .gradient-gold {
+        background: linear-gradient(135deg, #f1c40f 0%, #d4ac0d 100%) !important;
+        color: #1a1a1a !important;
+    }
+    .gradient-green {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: #ffffff !important;
+    }
+    .gradient-bronze {
+        background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+        color: #ffffff !important;
+    }
+    .tracking-wider {
+        letter-spacing: 0.08em;
+        font-size: 0.85rem;
+    }
 </style>
 
-<h3 class="mb-3">Dashboard Overview</h3>
+{% if request.user.user_level == 'Unit' %}
+    <h3 class="mb-1">Unit Dashboard Overview</h3>
+    <p class="text-muted mb-4">Evaluating Unit: <span class="font-weight-bold text-success" style="color: #046a38 !important;">{{ request.user.department.unit_id.unit_name }}</span></p>
+{% else %}
+    <h3 class="mb-1">System Dashboard Overview</h3>
+    <p class="text-muted mb-4">Katugunan Client Satisfaction Analytics & Monitoring Panel</p>
+{% endif %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <span class="w-auto"></span>
@@ -53,76 +81,97 @@
         <option value="{{ year.year }}">{{ year.year }}</option>
         {% endfor %}
     </select>
-    {% comment %} <select id="year-select" name="year_bar" class="form-select w-auto"
-        hx-get="{% url 'home:get_status_counts' %}" hx-target="#chart-data" hx-trigger="change"
-        hx-include="[name='year_bar']">
-        <option value="">All years</option>
-    </select> {% endcomment %}
 </div>
 
-<div class="row mb-2">
-    <!-- Summary Cards -->
-    <div class="col-md-2">
-        <div class="card text-white text-center card-bg mb-3">
-            <div class="card-header">TOTAL SURVEY</div>
-            <div class="card-body">
-                <div class="card-text">
-                    <h3>{{ total_surveys }}</h3>
-                </div>
+{% if request.user.user_level == 'Unit' %}
+<div class="row mb-4">
+    <!-- Summary Cards for Unit -->
+    <div class="col-md-3">
+        <div class="card text-white text-center gradient-emerald py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">TOTAL SURVEYS</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ total_surveys }}</h2>
             </div>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="card text-white text-center card-bg mb-3">
-            <div class="card-header">AVERAGE RATING</div>
-            <div class="card-body">
-                <div class="card-text">
-                    <h3>{{ average_rating|floatformat:2 }}</h3>
-                </div>
+    <div class="col-md-3">
+        <div class="card text-white text-center gradient-gold py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">AVERAGE RATING</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ average_rating|floatformat:2 }}</h2>
             </div>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="card text-white text-center card-bg mb-3">
-            <div class="card-header">USERS</div>
-            <div class="card-body">
-                <div class="card-text">
-                    <h3>{{ users }}</h3>
-                </div>
+    <div class="col-md-3">
+        <div class="card text-white text-center gradient-green py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">UNIT OFFICERS</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ users }}</h2>
             </div>
         </div>
     </div>
-    <div class="col-md-2">
-        <div class="card text-white text-center card-bg mb-3">
-            <div class="card-header">SERVICES</div>
-            <div class="card-body">
-                <div class="card-text">
-                    <h3>{{ services }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card text-white text-center card-bg mb-3">
-            <div class="card-header">UNITS</div>
-            <div class="card-body">
-                <div class="card-text">
-                    <h3>{{ units }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <div class="card text-white text-center card-bg mb-3">
-            <div class="card-header">DEPARTMENTS</div>
-            <div class="card-body">
-                <div class="card-text">
-                    <h3>{{ departments }}</h3>
-                </div>
+    <div class="col-md-3">
+        <div class="card text-white text-center gradient-bronze py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">UNIT SERVICES</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ services }}</h2>
             </div>
         </div>
     </div>
 </div>
+{% else %}
+<div class="row mb-4">
+    <!-- Summary Cards for Super/Admin -->
+    <div class="col-md-2">
+        <div class="card text-white text-center gradient-emerald py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">TOTAL SURVEYS</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ total_surveys }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center gradient-gold py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">AVERAGE RATING</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ average_rating|floatformat:2 }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center gradient-green py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">SYSTEM USERS</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ users }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center gradient-bronze py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">SERVICES</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ services }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center gradient-emerald py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">COLLEGE UNITS</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ units }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-white text-center gradient-gold py-3 mb-3 shadow-sm">
+            <div class="card-header border-0 bg-transparent text-uppercase tracking-wider">DEPARTMENTS</div>
+            <div class="card-body py-2">
+                <h2 class="display-5 font-weight-bold mb-0">{{ departments }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <div class="row mb-2">
 

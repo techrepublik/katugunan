@@ -106,7 +106,8 @@ class ClientSurveyViewTest(TestCase):
             email="officer@example.com",
             password="password",
             department=self.department,
-            position=self.position
+            position=self.position,
+            user_level="Admin"
         )
         self.service = Service.objects.create(
             position_id=self.position,
@@ -139,6 +140,9 @@ class ClientSurveyViewTest(TestCase):
         )
 
     def test_merged_get_sqd_data_view(self):
+        # Log in the user with authorized role
+        self.client.login(username="officer", password="password")
+        
         # Query with year_sqd
         current_year = self.survey1.created_on.year
         url = reverse('home:populate_sgd')
@@ -155,3 +159,112 @@ class ClientSurveyViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         data_sgd = json.loads(response.content.decode('utf-8'))
         self.assertEqual(data, data_sgd)
+
+
+class RBACPermissionsTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        
+        # Setup units, departments, positions
+        self.branch = Branch.objects.create(branch_name="Branch MC", branch_short_name="BMC")
+        self.unit1 = Unit.objects.create(unit_name="Unit Computing", unit_short_name="UC", branch=self.branch)
+        self.unit2 = Unit.objects.create(unit_name="Unit Nursing", unit_short_name="UN", branch=self.branch)
+        
+        self.dept1 = Department.objects.create(department_name="IT Dept", department_short_name="ITD", unit_id=self.unit1)
+        self.dept2 = Department.objects.create(department_name="Nursing Dept", department_short_name="ND", unit_id=self.unit2)
+        
+        self.pos1 = Position.objects.create(department=self.dept1, position_name="IT Instructor")
+        self.pos2 = Position.objects.create(department=self.dept2, position_name="Nursing Instructor")
+        
+        # Super user
+        self.super_user = CustomUser.objects.create_user(
+            username="superuser", email="super@example.com", password="password",
+            user_level="Super", is_superuser=True
+        )
+        # Admin user
+        self.admin_user = CustomUser.objects.create_user(
+            username="adminuser", email="admin@example.com", password="password",
+            user_level="Admin", department=self.dept1, position=self.pos1
+        )
+        # Unit user (UC Unit)
+        self.unit_user = CustomUser.objects.create_user(
+            username="unituser", email="unit@example.com", password="password",
+            user_level="Unit", department=self.dept1, position=self.pos1
+        )
+        # Client user
+        self.client_user = CustomUser.objects.create_user(
+            username="clientuser", email="client@example.com", password="password",
+            user_level="Client", department=self.dept2, position=self.pos2
+        )
+        
+        # Surveys for Unit 1 officer (admin_user)
+        self.survey_u1 = ClientSurvey.objects.create(
+            user_id=self.admin_user.user_id,
+            client_type="Student", region="Region XII", sex="Male", age=22,
+            transaction_types=["Inquiry on Services"], cc1="1", cc2="1", cc3="1",
+            sqd0=5, sqd1=5, sqd2=5, sqd3=5, sqd4=5, sqd5=5, sqd6=5, sqd7=5, sqd8=5
+        )
+        # Surveys for Unit 2 officer (client_user - who is treated as evaluated staff)
+        self.survey_u2 = ClientSurvey.objects.create(
+            user_id=self.client_user.user_id,
+            client_type="Student", region="Region XII", sex="Female", age=21,
+            transaction_types=["Inquiry on Services"], cc1="1", cc2="1", cc3="1",
+            sqd0=1, sqd1=1, sqd2=1, sqd3=1, sqd4=1, sqd5=1, sqd6=1, sqd7=1, sqd8=1
+        )
+
+    def test_anonymous_redirect(self):
+        url = reverse('home:dashboard')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_client_access_denied(self):
+        self.client.login(username="clientuser", password="password")
+        url = reverse('home:dashboard')
+        response = self.client.get(url)
+        # client level should raise PermissionDenied (HTTP 403)
+        self.assertEqual(response.status_code, 403)
+
+    def test_unit_user_restricted_endpoints(self):
+        self.client.login(username="unituser", password="password")
+        # Unit user should be allowed to view dashboard
+        url = reverse('home:dashboard')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # Unit user should be denied access to management/config views, e.g. branch list
+        url_branch = reverse('home:branch_list')
+        response = self.client.get(url_branch)
+        self.assertEqual(response.status_code, 403)
+
+    def test_unit_user_data_isolation(self):
+        # Logged in as Unit User of Unit 1
+        self.client.login(username="unituser", password="password")
+        
+        # Test sqd counts endpoint
+        url = reverse('home:populate_sgd')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content.decode('utf-8'))
+        
+        # Only surveys matching Unit 1 should be aggregated.
+        # self.survey_u1 has 9 fields of score 5. Total counts of score 5 label should be 9.
+        # self.survey_u2 has score 1, which belongs to Unit 2 (Nursing), and should be excluded.
+        labels = data['labels']
+        values = data['data']
+        res_dict = dict(zip(labels, values))
+        
+        self.assertEqual(res_dict.get('Strongly Agree', 0), 9)
+        self.assertEqual(res_dict.get('Strongly Disagree', 0), 0)
+
+    def test_admin_cannot_modify_super(self):
+        self.client.login(username="adminuser", password="password")
+        # Attempt to edit super_user password
+        url = reverse('home:change_user_password', kwargs={'pk': self.super_user.pk})
+        response = self.client.post(url, {'new_password': 'newpassword123', 'confirm_password': 'newpassword123'})
+        self.assertEqual(response.status_code, 403)
+
+        # Attempt to delete super_user
+        url_del = reverse('home:user_delete', kwargs={'pk': self.super_user.pk})
+        response = self.client.delete(url_del)
+        self.assertEqual(response.status_code, 403)

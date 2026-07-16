@@ -3,18 +3,31 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 <!-- Font Awesome -->
 
-<div class="sidebar d-flex flex-column p-3">
-    <div class="text-center mb-4">
-        <img src="{% static 'usm_logo.png' %}" alt="Admin Logo" width="100" height="100" class="sidebar-logo">
+<div class="sidebar d-flex flex-column p-4">
+    <div class="text-center mb-4 pb-3 border-bottom-gold">
+        <a href="{% url 'home:dashboard' %}" class="d-inline-block">
+            <img src="{% static 'usm_logo.png' %}" alt="Admin Logo" width="90" height="90" class="sidebar-logo">
+        </a>
+        <div class="brand-title mt-2 font-weight-bold">USM KATUGUNAN</div>
     </div>
     <ul class="nav flex-column">
+
+        <li class="nav-item">
+            <a href="{% url 'home:dashboard' %}" class="nav-link">
+                <i class="fas fa-chart-pie text-gold"></i>
+                Dashboard
+            </a>
+        </li>
 
         <!-- Management Menu Group -->
         {% if request.user.user_level == 'Admin' or request.user.user_level == 'Super' %}
         <li class="nav-item">
-            <a href="#managementSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-                <i class="fas fa-user-cog"></i> <!-- Management Icon -->
-                Management
+            <a href="#managementSubmenu" class="nav-link d-flex justify-content-between align-items-center" data-toggle="collapse" aria-expanded="false">
+                <span>
+                    <i class="fas fa-user-cog text-gold"></i>
+                    Management
+                </span>
+                <i class="fas fa-chevron-down submenu-indicator"></i>
             </a>
             <ul class="collapse list-unstyled ml-3" id="managementSubmenu">
                 <li>
@@ -37,129 +50,122 @@
                     <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:service_list' %}"
                         hx-target="#content-area" hx-swap="innerHTML">Services</a>
                 </li>
-        </li>
-
-        <li>
-            <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:user_list' %}" hx-target="#content-area"
-                hx-swap="innerHTML">Users</a>
-        </li>
-    </ul>
-    </li>
-    {% endif %}
-
-    <!-- Surveys Menu Group -->
-    <li class="nav-item">
-        <a href="#surveysSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-            <i class="fas fa-poll"></i> <!-- Surveys Icon -->
-            Surveys
-        </a>
-        <ul class="collapse list-unstyled ml-3" id="surveysSubmenu">
-            <li><a href="#" class="nav-link submenu-link" hx-get="{% url 'home:result_user_list' %}"
-                    hx-target="#content-area" hx-swap="innerHTML">Personnel List</a></li>
-            <!-- <li><a href="{% url 'home:survey_all' %}" class="nav-link submenu-link">Individual Responses</a></li>
-            <li><a href="{% url 'home:sqd_count' %}" class="nav-link submenu-link">Survey Analytics</a></li>
-            <li><a href="{% url 'home:cc_chart_view' %}" class="nav-link submenu-link">CC Chart</a></li>
-            <li><a href="{% url 'home:sqd_chart_view' %}" class="nav-link submenu-link">SQD Chart</a></li>
-            <li><a href="{% url 'home:cc_combine_chart_view' %}" class="nav-link submenu-link">SQD Combine Chart</a>
-            </li> -->
-
-        </ul>
-    </li>
-
-    <!-- Reports Menu Group -->
-    <!-- <li class="nav-item">
-        <a href="#reportsSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-            <i class="fas fa-chart-line"></i>
-            Reports
-        </a>
-        <ul class="collapse list-unstyled ml-3" id="reportsSubmenu">
-            <li><a href="#" class="nav-link submenu-link">Monthly Report</a></li>
-            <li><a href="#" class="nav-link submenu-link">Annual Report</a></li>
-            <li><a href="#" class="nav-link submenu-link">Custom Report</a></li>
-        </ul>
-    </li> -->
-
-    <!-- Preferences Menu Group -->
-    <!-- <li class="nav-item">
-            <a href="#preferencesSubmenu" class="nav-link" data-toggle="collapse" aria-expanded="false">
-                <i class="fas fa-sliders-h"></i> 
-                Preferences
-            </a>
-            <ul class="collapse list-unstyled ml-3" id="preferencesSubmenu">
-                <li><a href="#" class="nav-link submenu-link">Settings</a></li>
-                <li><a href="#" class="nav-link submenu-link">User Profile</a></li>
-                <li><a href="#" class="nav-link submenu-link">Notifications</a></li>
+                <li>
+                    <a href="#" class="nav-link submenu-link" hx-get="{% url 'home:user_list' %}" hx-target="#content-area"
+                        hx-swap="innerHTML">Users</a>
+                </li>
             </ul>
-        </li> -->
+        </li>
+        {% endif %}
+
+        <!-- Surveys Menu Group -->
+        <li class="nav-item">
+            <a href="#surveysSubmenu" class="nav-link d-flex justify-content-between align-items-center" data-toggle="collapse" aria-expanded="false">
+                <span>
+                    <i class="fas fa-poll text-gold"></i>
+                    Surveys
+                </span>
+                <i class="fas fa-chevron-down submenu-indicator"></i>
+            </a>
+            <ul class="collapse list-unstyled ml-3" id="surveysSubmenu">
+                <li><a href="#" class="nav-link submenu-link" hx-get="{% url 'home:result_user_list' %}"
+                        hx-target="#content-area" hx-swap="innerHTML">Personnel List</a></li>
+            </ul>
+        </li>
     </ul>
+
+    <div class="mt-auto pt-3 border-top-gold text-center text-muted" style="font-size: 0.8rem;">
+        &copy; 2026 USM Katugunan
+    </div>
 </div>
 
-
-
-
 <style>
+    .border-bottom-gold {
+        border-bottom: 2px solid #f1c40f;
+    }
+    
+    .border-top-gold {
+        border-top: 1px solid rgba(241, 196, 15, 0.3);
+    }
+
+    .brand-title {
+        color: #ffffff;
+        font-size: 1.05rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
     .sidebar-logo {
-        max-width: 100px;
-        /* Adjust size as needed */
-        width: 80%;
-        /* Responsive scaling */
-        margin-top: 10px;
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar-logo:hover {
+        transform: rotate(5deg) scale(1.05);
     }
 
     .sidebar {
-        background-color: #198754;
+        background-color: #044a27;
         color: #fff;
-        min-width: 250px;
+        min-width: 260px;
         height: 100vh;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
     }
 
     .sidebar a {
-        color: #cfd8dc;
-        padding: 10px 15px;
+        color: #e2e8f0;
+        padding: 12px 16px;
         text-decoration: none;
+        display: block;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        margin-bottom: 4px;
     }
 
     .sidebar a:hover,
     .sidebar a:focus {
-        color: #fff;
-        /* background-color: #495057; */
-        background-color: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.08);
         text-decoration: none;
     }
 
-    /* Smaller font size for sub-menu links 
-        .submenu-link {
-            font-size: 0.9rem; /* Make sub-menu text smaller */
+    .text-gold {
+        color: #f1c40f !important;
     }
 
-    /* Icon alignment and spacing */
     .nav-link i {
-        margin-right: 8px;
-        /* Add space between icon and text */
+        margin-right: 10px;
+        font-size: 1.1rem;
+        width: 20px;
+        text-align: center;
     }
 
-    /* Sidebar background color */
-    .sidebar {
-        background-color: #198754;
-        height: 100vh;
-        padding-top: 1rem;
-    }
-
-    /* Text color for sidebar items */
     .sidebar .nav-link {
-        color: #FFD700;
-        /*font-weight: bold; */
+        color: #f8fafc;
     }
 
-    /* Hover color for sidebar items */
     .sidebar .nav-link:hover {
-        color: #DAA520;
-        background-color: rgba(255, 255, 255, 0.1);
-        /* Optional slight background change */
+        color: #f1c40f;
+        background-color: rgba(255, 255, 255, 0.08);
     }
 
-    /* Active link styling */
-    .sidebar .nav-link.active {
-        color: #DAA520;
+    .submenu-indicator {
+        font-size: 0.8rem;
+        transition: transform 0.2s ease;
+    }
+    
+    .nav-link[aria-expanded="true"] .submenu-indicator {
+        transform: rotate(180deg);
+    }
+
+    .submenu-link {
+        font-size: 0.9rem;
+        padding: 8px 16px 8px 36px !important;
+        opacity: 0.85;
+    }
+
+    .submenu-link:hover {
+        opacity: 1;
+        color: #f1c40f !important;
     }
 </style>

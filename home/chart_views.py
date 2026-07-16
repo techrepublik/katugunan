@@ -7,13 +7,15 @@ from datetime import datetime
 from django.db.models.functions import ExtractYear
 from django.shortcuts import render
 from .models import *
+from .utils import role_required, get_filtered_surveys
 
+@role_required(['Super', 'Admin', 'Unit'])
 def cc_bar_chart_view(request):
     # Choice labels
     cc1_labels = {
         '1': "I know what a CC is and I saw this office’s CC.",
         '2': "I know what a CC is but I did NOT see this office’s CC.",
-        '3': "I know what a CC is but I did NOT see this office’s CC.",
+        '3': "I learned of the CC only when I saw this office’s CC.",
         '4': "I do not know what a CC is and I did NOT see one in this office.",
     }
 
@@ -37,7 +39,8 @@ def cc_bar_chart_view(request):
     cc2_counts = defaultdict(int)
     cc3_counts = defaultdict(int)
 
-    for survey in ClientSurvey.objects.values('cc1', 'cc2', 'cc3'):
+    surveys = get_filtered_surveys(request).values('cc1', 'cc2', 'cc3')
+    for survey in surveys:
         if survey['cc1']:
             cc1_counts[survey['cc1']] += 1
         if survey['cc2']:
@@ -57,6 +60,7 @@ def cc_bar_chart_view(request):
 
     return JsonResponse(context)
 
+@role_required(['Super', 'Admin', 'Unit'])
 def sqd_bar_chart_view(request):
 
     # SQD fields
@@ -76,7 +80,7 @@ def sqd_bar_chart_view(request):
     sqd_counts = {field: defaultdict(int) for field in sqd_fields}
 
     # Query data
-    surveys = ClientSurvey.objects.values(*sqd_fields)
+    surveys = get_filtered_surveys(request).values(*sqd_fields)
     for survey in surveys:
         for field in sqd_fields:
             value = survey[field]
@@ -97,13 +101,12 @@ def sqd_bar_chart_view(request):
     }
     return JsonResponse(context)
 
+@role_required(['Super', 'Admin', 'Unit'])
 def cc_combined_bar_chart_view(request):
     year = request.GET.get('year_citizen')
-    # print(year)
+    surveys = get_filtered_surveys(request)
     if year:
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
-    else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys.filter(created_on__year=year)
 
     # Response option keys (as strings for uniformity)
     response_keys = ['1', '2', '3', '4', '5']
@@ -139,13 +142,14 @@ def cc_combined_bar_chart_view(request):
 
     return JsonResponse(context)
 
+@role_required(['Super', 'Admin', 'Unit'])
 def combined_sqd_chart_view(request):
     year = request.GET.get('year_sqd')
-    # print(year)
+    surveys = get_filtered_surveys(request)
     if year:
-        data = ClientSurvey.objects.filter(created_on__year=year)
+        data = surveys.filter(created_on__year=year)
     else:
-        data = ClientSurvey.objects.all()
+        data = surveys
 
     sqd_fields = [f'sqd{i}' for i in range(9)]
 
@@ -161,8 +165,8 @@ def combined_sqd_chart_view(request):
 
     # Prepare counts
     sqd_counts = {field: defaultdict(int) for field in sqd_fields}
-    surveys = data.values(*sqd_fields)
-    for survey in surveys:
+    surveys_data = data.values(*sqd_fields)
+    for survey in surveys_data:
         for field in sqd_fields:
             value = survey[field]
             if value is not None:
@@ -183,13 +187,14 @@ def combined_sqd_chart_view(request):
 
     return JsonResponse(context)
 
+@role_required(['Super', 'Admin', 'Unit'])
 def survey_per_month_chart(request):
     year = request.GET.get('year_survey')
-    # print(year)
+    surveys = get_filtered_surveys(request)
     if year:
-        data = ClientSurvey.objects.filter(created_on__year=year)
+        data = surveys.filter(created_on__year=year)
     else:
-        data = ClientSurvey.objects.all()
+        data = surveys
 
     # Group surveys by month
     monthly_data = (
@@ -204,14 +209,14 @@ def survey_per_month_chart(request):
 
     # Group by unit per month
     unit_month_counts = defaultdict(lambda: defaultdict(int))
-    surveys = data.annotate(month=TruncMonth('created_on')).values('month', 'user_id')
+    surveys_by_month = data.annotate(month=TruncMonth('created_on')).values('month', 'user_id')
 
     user_map = {
         user.user_id: user.department.unit_id.unit_short_name if user.department and user.department.unit_id else 'N/A'
         for user in CustomUser.objects.select_related('department__unit_id')
     }
 
-    for survey in surveys:
+    for survey in surveys_by_month:
         user_id = survey.get('user_id')
         unit = user_map.get(user_id, 'Unknown')
         month = survey['month'].strftime("%B %Y")
@@ -235,22 +240,23 @@ def survey_per_month_chart(request):
 
     return JsonResponse(context)
 
+@role_required(['Super', 'Admin', 'Unit'])
 def region_monthly_modal(request):
-    # years = ClientSurvey.objects.dates('created_on', 'year').distinct()
-    years = ClientSurvey.objects.annotate(year=ExtractYear(
+    years = get_filtered_surveys(request).annotate(year=ExtractYear(
         'created_on')).values('year').distinct().order_by('-year')
-    # year_list = sorted(set(dt.year for dt in years))
     return render(request, 'surveys/modals/region.html', {
         'years': years
     })
 
+@role_required(['Super', 'Admin', 'Unit'])
 def region_monthly_survey_chart(request):
     year = request.GET.get('year')
+    surveys = get_filtered_surveys(request)
     if year:
         year = int(year)
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
+        surveys = surveys.filter(created_on__year=year)
     else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys
 
 
     data = (
@@ -276,13 +282,6 @@ def region_monthly_survey_chart(request):
         if region in region_data:
             region_data[region][month_index[month_label]] = entry['count']
 
-    # datasets = [{
-    #     'label': region,
-    #     'data': region_data[region],
-    #     'fill': False,
-    #     'tension': 0.3
-    # } for region in regions]
-
     datasets = []
     for region in regions:
         color = f"rgba({random.randint(0,255)}, {random.randint(0,255)}, {random.randint(0,255)}, 0.7)"
@@ -301,23 +300,17 @@ def region_monthly_survey_chart(request):
     }
     return JsonResponse(context)
 
+@role_required(['Super', 'Admin', 'Unit'])
 def region_monthly_by_dept_unit_chart(request):
     year = request.GET.get('year')
+    surveys = get_filtered_surveys(request)
     if year:
         year = int(year)
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
+        surveys = surveys.filter(created_on__year=year)
     else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys
 
     data = (
-        surveys
-        .annotate(month=TruncMonth('created_on'))
-        .values('month', 'user_id')
-        .annotate(count=Count('id'))
-        .order_by('month')
-    )
-
-    data1 = (
         surveys
         .annotate(month=TruncMonth('created_on'))
         .values('month', 'user_id')
@@ -405,28 +398,30 @@ def region_monthly_by_dept_unit_chart(request):
 
 
 ### citizen charter
+@role_required(['Super', 'Admin', 'Unit'])
 def cc_monhtly_modal(request):
     return render(request, 'surveys/modals/citizen_charter.html')
 
 
 
 ### sqd chart
+@role_required(['Super', 'Admin', 'Unit'])
 def sqd_chart_modal(request):
-    # years = ClientSurvey.objects.dates('created_on', 'year').distinct()
-    years = ClientSurvey.objects.annotate(year=ExtractYear(
+    years = get_filtered_surveys(request).annotate(year=ExtractYear(
         'created_on')).values('year').distinct().order_by('-year')
-    # year_list = sorted(set(dt.year for dt in years))
     return render(request, 'surveys/modals/sqd_chart.html', {
         'years': years
     })
 
+@role_required(['Super', 'Admin', 'Unit'])
 def sqd_chart_modal_view(request):
     try:
         year = int(request.GET.get('year_sqd', 0))
     except (TypeError, ValueError):
         return JsonResponse({'error': 'Invalid year format'}, status=400)
 
-    data = ClientSurvey.objects.filter(created_on__year=year) if year else ClientSurvey.objects.all()
+    surveys_qs = get_filtered_surveys(request)
+    data = surveys_qs.filter(created_on__year=year) if year else surveys_qs
 
     sqd_fields = [f'sqd{i}' for i in range(9)]
     rating_labels = {
@@ -478,9 +473,11 @@ def sqd_chart_modal_view(request):
 
     return JsonResponse(chart_data)
 
+@role_required(['Super', 'Admin', 'Unit'])
 def sqd_grouped_by_unit_department_view(request):
     year = request.GET.get('year_sqd')
-    data = ClientSurvey.objects.filter(created_on__year=year) if year else ClientSurvey.objects.all()
+    surveys_qs = get_filtered_surveys(request)
+    data = surveys_qs.filter(created_on__year=year) if year else surveys_qs
 
     sqd_fields = [f'sqd{i}' for i in range(9)]
     rating_labels = {
@@ -535,18 +532,18 @@ def sqd_grouped_by_unit_department_view(request):
 
 
 ### transaction
+@role_required(['Super', 'Admin', 'Unit'])
 def transaction_chart_modal(request):
-    # years = ClientSurvey.objects.dates('created_on', 'year').distinct()
-    years = ClientSurvey.objects.annotate(year=ExtractYear(
+    years = get_filtered_surveys(request).annotate(year=ExtractYear(
         'created_on')).values('year').distinct().order_by('-year')
-    # year_list = sorted(set(dt.year for dt in years))
     return render(request, 'surveys/modals/transaction.html', {
         'years': years
     })
 
+@role_required(['Super', 'Admin', 'Unit'])
 def transaction_types_grouped_by_unit_department(request):
     year = request.GET.get('year_transaction1')
-    surveys = ClientSurvey.objects.all()
+    surveys = get_filtered_surveys(request)
     if year:
         surveys = surveys.filter(created_on__year=year)
 
@@ -584,9 +581,10 @@ def transaction_types_grouped_by_unit_department(request):
         'summary_data': summary_data
     })
 
+@role_required(['Super', 'Admin', 'Unit'])
 def transaction_types_by_unit_department(request):
     year = request.GET.get('year_transaction1')
-    surveys = ClientSurvey.objects.all()
+    surveys = get_filtered_surveys(request)
     if year:
         surveys = surveys.filter(created_on__year=year)
 

@@ -1,136 +1,127 @@
 <!-- templates/users/user_form.html -->
 {% load crispy_forms_tags %}
-<h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} User</h2>
-<form method="post" enctype="multipart/form-data"
-    hx-post="{% if form.instance.pk %}{% url 'home:user_update' form.instance.pk %}{% else %}{% url 'home:user_create' %}{% endif %}"
-    hx-target="#content-area" hx-swap="innerHTML" hx-encoding="multipart/form-data">
+<div class="card p-4 shadow-sm">
+    <h2 class="mb-4">{% if form.instance.pk %}Edit{% else %}Create{% endif %} User</h2>
+    <form method="post" enctype="multipart/form-data"
+        hx-post="{% if form.instance.pk %}{% url 'home:user_update' form.instance.pk %}{% else %}{% url 'home:user_create' %}{% endif %}"
+        hx-target="#content-area" hx-swap="innerHTML" hx-encoding="multipart/form-data">
 
-    {% csrf_token %}
-    {% if form.instance.pk and form.instance.qrcode_image %}
-    <div class="text-center mb-3">
-        <label class="d-block text-muted small mb-1">QR Code</label>
-        <img src="{{ form.instance.qrcode_image.url }}" alt="User QR code" class="img-fluid border rounded"
-            style="max-width: 180px;">
-    </div>
-    {% endif %}
-    <div class="row">
-        <div class="col-md-6 mb-0">
-            {{ form.username|as_crispy_field }}
+        {% csrf_token %}
+        {% if form.instance.pk and form.instance.qrcode_image %}
+        <div class="text-center mb-4">
+            <label class="d-block text-muted small mb-1">QR Code</label>
+            <img src="{{ form.instance.qrcode_image.url }}" alt="User QR code" class="img-fluid border rounded shadow-sm"
+                style="max-width: 160px;">
         </div>
-        <div class="col-md-6 mb-0">
-            {{ form.email|as_crispy_field }}
-        </div>
-    </div>
-    <!--
-    <div class="col-md-6 mb-0">
-        {{ form.password|as_crispy_field }}
-    </div>
-    <div class="col-md-6 mb-0">
-        {{ form.confirm_password|as_crispy_field }}
-    </div>
-    -->
-    <hr />
-    <div class="col-md-6 mb-0">
-        {{ form.id_number|as_crispy_field }}
-    </div>
-    <div class="form-row">
-        <div class="col-md-4 mb-0">
-            {{ form.first_name|as_crispy_field }}
-        </div>
-        <div class="col-md-4 mb-0">
-            {{ form.middle_name|as_crispy_field }}
-        </div>
-        <div class="col-md-4 mb-0">
-            {{ form.last_name|as_crispy_field }}
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="col-md-4 mb-0">
-            {{ form.birth_date|as_crispy_field }}
-        </div>
-        <div class="col-md-4 mb-0">
-            {{ form.contact_no|as_crispy_field }}
-        </div>
-        <div class="col-md-4 mb-0">
-            {{ form.sex|as_crispy_field }}
-        </div>
-    </div>
-    <div class="col-md-12 mb-0">
-        {{ form.department|as_crispy_field }}
-    </div>
-    <div class="col-md-12 mb-0">
-        {{ form.position|as_crispy_field }}
-    </div>
-    <div class="col-md-12 mb-0">
-        {{ form.position_status|as_crispy_field }}
-    </div>
-    {% if request.user.user_level == 'Admin' or request.user.user_level == 'Super' %}
-    <div class="col-md-12 mb-0">
-        {{ form.user_level|as_crispy_field }}
-    </div>
-    {% endif %}
-    <div class="form-group">
-        <label for="picture">Profile Picture</label><br>
-
-        <!-- Display current picture if it exists -->
-        {% if user and user.picture %}
-        <img id="picture-preview" src="{{ user.picture.url }}" alt="Profile Picture" width="200" height="200">
-        {% else %}
-        <img id="picture-preview" src="" alt="Profile Picture" width="200" height="200" style="display: none;">
         {% endif %}
-
-        <!-- File Input -->
-        {{ form.picture }}
-    </div>
-    <button type="submit" class="btn btn-success">Save</button>
-    <a href="{% url 'home:user_list' %}" hx-get="{% url 'home:user_list' %}" hx-target="#content-area"
-        class="btn btn-secondary">Cancel</a>
-    {% if form.instance.pk and request.user.user_level == 'Super' or request.user.user_level == 'Admin' %}
-    <button class="btn btn-outline-secondary w-auto" hx-get="{% url 'home:change_user_password' form.instance.pk %}"
-        hx-target="#modal-body" data-toggle="modal" data-target="#passModal">Set password</button>
-    {% endif %}
-</form>
-
-<!-- Modal Structure -->
-<div class="modal fade" id="passModal" tabindex="-1" role="dialog" aria-labelledby="passModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="passModalLabel">Change Password</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.username|as_crispy_field }}
             </div>
-            <div class="modal-body" id="modal-body">
-                <!-- Content dynamically loaded here -->
+            <div class="col-md-6 mb-3">
+                {{ form.email|as_crispy_field }}
             </div>
         </div>
-    </div>
+
+        <hr class="my-4" />
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.id_number|as_crispy_field }}
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                {{ form.first_name|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{ form.middle_name|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{ form.last_name|as_crispy_field }}
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                {{ form.birth_date|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{ form.contact_no|as_crispy_field }}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{ form.sex|as_crispy_field }}
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            {{ form.department|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+            {{ form.position|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+            {{ form.position_status|as_crispy_field }}
+        </div>
+        
+        {% if request.user.user_level == 'Admin' or request.user.user_level == 'Super' %}
+        <div class="mb-4">
+            {{ form.user_level|as_crispy_field }}
+        </div>
+        {% endif %}
+        
+        <div class="form-group mb-4">
+            <label class="font-weight-500 mb-2">Profile Picture</label><br>
+
+            <!-- Display current picture if it exists -->
+            <div class="mb-2">
+                {% if user and user.picture %}
+                <img id="picture-preview" src="{{ user.picture.url }}" alt="Profile Picture" class="img-thumbnail" width="180" height="180" style="object-fit: cover;">
+                {% else %}
+                <img id="picture-preview" src="" alt="Profile Picture" class="img-thumbnail" width="180" height="180" style="display: none; object-fit: cover;">
+                {% endif %}
+            </div>
+
+            <!-- File Input -->
+            {{ form.picture }}
+        </div>
+
+        <div class="d-flex align-items-center mt-4" style="gap: 12px;">
+            <button type="submit" class="btn btn-success px-4">Save Profile</button>
+            <a href="{% url 'home:user_list' %}" hx-get="{% url 'home:user_list' %}" hx-target="#content-area"
+                class="btn btn-secondary px-4" style="border-radius: 8px;">Cancel</a>
+            {% if form.instance.pk and request.user.user_level == 'Super' or request.user.user_level == 'Admin' %}
+            <button type="button" class="btn btn-outline-secondary ml-auto" hx-get="{% url 'home:change_user_password' form.instance.pk %}"
+                hx-target="#modal-body" data-toggle="modal" data-target="#crudModal" style="border-radius: 8px;">Set Password</button>
+            {% endif %}
+        </div>
+    </form>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    (function () {
         const pictureInput = document.querySelector('input[name="picture"]');
         const picturePreview = document.getElementById("picture-preview");
 
-        pictureInput.addEventListener("change", function (event) {
-            const file = event.target.files[0];
-            const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (pictureInput && picturePreview) {
+            pictureInput.addEventListener("change", function (event) {
+                const file = event.target.files[0];
+                const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
-            if (file && validImageTypes.includes(file.type)) {
-                // Display the image preview with the selected file
-                picturePreview.src = URL.createObjectURL(file);
-                picturePreview.style.display = "block";
-            } else if (file) {
-                // Alert the user if the selected file is not a valid image
-                alert("Please select a valid image file.");
-                picturePreview.src = "";
-                picturePreview.style.display = "none";
-            } else {
-                // No file selected: hide the preview image
-                picturePreview.src = "";
-                picturePreview.style.display = "none";
-            }
-        });
-    });
+                if (file && validImageTypes.includes(file.type)) {
+                    picturePreview.src = URL.createObjectURL(file);
+                    picturePreview.style.display = "block";
+                } else if (file) {
+                    alert("Please select a valid image file.");
+                    picturePreview.src = "";
+                    picturePreview.style.display = "none";
+                } else {
+                    picturePreview.src = "";
+                    picturePreview.style.display = "none";
+                }
+            });
+        }
+    })();
 </script>

@@ -23,58 +23,53 @@ from .forms import QuestionForm, UnitForm, DepartmentForm, UserForm, \
     RatingForm,  Rating, YearSelectionForm, \
     CustomAuthenticationForm, ClientSurveyForm, ClientSurvey, PositionForm, ServiceForm, \
     BranchForm, CustomUserPasswordChangeForm
+from django.core.exceptions import PermissionDenied
+from .utils import role_required, get_filtered_surveys
 
 
 User = get_user_model()
 
 
-@login_required(login_url='home:login')
+@role_required(['Super', 'Admin', 'Unit'])
 def dashboard_view(request):
-
-    surveys = ClientSurvey.objects.all()
+    surveys = get_filtered_surveys(request)
     ratings = Rating.objects.all()
-    users = User.objects.count()
-    services = Service.objects.count()
-    units = Unit.objects.count()
-    departments = Department.objects.count()
+
+    if request.user.is_superuser or request.user.user_level in ['Super', 'Admin']:
+        users = User.objects.count()
+        services = Service.objects.count()
+        units = Unit.objects.count()
+        departments = Department.objects.count()
+    elif request.user.user_level == 'Unit':
+        if request.user.department and request.user.department.unit_id:
+            my_unit = request.user.department.unit_id
+            users = User.objects.filter(department__unit_id=my_unit).count()
+            services = Service.objects.filter(position_id__department__unit_id=my_unit).count()
+            units = 1
+            departments = Department.objects.filter(unit_id=my_unit).count()
+        else:
+            users = 0
+            services = 0
+            units = 0
+            departments = 0
+    else:
+        users = 0
+        services = 0
+        units = 0
+        departments = 0
 
     # Aggregate data for summaries
     total_surveys = surveys.count()
     average_rating = Rating.objects.aggregate(
         Avg('rating')).get('rating__avg')
-    # survey_by_region = surveys.values(
-    #     'region').annotate(total=Count('id')).order_by('-total')
-    # recent_surveys = ratings.all().order_by(
-    #     '-created_at')[:5]  # last 5 surveys
 
     # Extract unique years from the ClientSurvey created_on field
     years = surveys.annotate(year=ExtractYear(
         'created_on')).values('year').distinct().order_by('-year')
 
-    # # Count male and female entries
-    # gender_counts = surveys.values(
-    #     'sex').annotate(total=Count('sex'))
-    # for entry in gender_counts:
-    #     if entry['sex'] == 'Male':
-    #         male_count = entry['total']
-    #     elif entry['sex'] == 'Female':
-    #         female_count = entry['total']
-
-    # # Count each transaction type across all surveys
-    # transaction_counts = Counter(
-    #     chain.from_iterable(surveys.values_list(
-    #         'transaction_types', flat=True))
-    # )
-
-    # # Pass context to template
     context = {
         'total_surveys': total_surveys,
         'average_rating': average_rating,
-        # 'survey_by_region': survey_by_region,
-        # 'recent_surveys': recent_surveys,
-        # 'transaction_counts': dict(transaction_counts),
-        # 'male_count': male_count,
-        # 'female_count': female_count,
         'years': years,
         'users': users,
         'services': services,
@@ -84,13 +79,13 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', context)
 
 
+@role_required(['Super', 'Admin', 'Unit'])
 def populate_dashboard(request):
     year = request.GET.get('year_transaction')
+    surveys = get_filtered_surveys(request)
 
     if year:
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
-    else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys.filter(created_on__year=year)
 
     # Count each transaction type across all surveys
     transaction_counts = Counter(
@@ -103,17 +98,16 @@ def populate_dashboard(request):
         'transaction_counts': dict(transaction_counts),
     }
 
-    # print(data)
     return JsonResponse(data)
 
 
+@role_required(['Super', 'Admin', 'Unit'])
 def populate_dashboard_region(request):
     year = request.GET.get('year_region')
+    surveys = get_filtered_surveys(request)
 
     if year:
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
-    else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys.filter(created_on__year=year)
 
     survey_by_region = surveys.values(
         'region').annotate(total=Count('id')).order_by('-total')
@@ -126,14 +120,23 @@ def populate_dashboard_region(request):
     return JsonResponse(data)
 
 
+@role_required(['Super', 'Admin', 'Unit'])
 def populate_dashboard_gender(request):
     year = request.GET.get('year_sex')
 
+    if request.user.user_level == 'Unit':
+        if request.user.department and request.user.department.unit_id:
+            users_qs = CustomUser.objects.filter(department__unit_id=request.user.department.unit_id)
+        else:
+            users_qs = CustomUser.objects.none()
+    else:
+        users_qs = CustomUser.objects.all()
+
     if year:
-        genders = CustomUser.objects.values('sex').annotate(
+        genders = users_qs.values('sex').annotate(
             count=Count('id')).filter(registered_on__year=year)
     else:
-        genders = CustomUser.objects.values('sex').annotate(count=Count('id'))
+        genders = users_qs.values('sex').annotate(count=Count('id'))
 
     labels = []
     counts = []
@@ -147,8 +150,6 @@ def populate_dashboard_gender(request):
             labels.append('Unspecified')
         counts.append(entry['count'])
 
-    print(genders)
-
     context = {
         'labels': labels,
         'counts': counts,
@@ -158,23 +159,23 @@ def populate_dashboard_gender(request):
 
 
 @require_GET
+@role_required(['Super', 'Admin', 'Unit'])
 def citizen_year(request):
     # Fetch unique years from ClientSurvey to populate the dropdown
-    years = ClientSurvey.objects.dates('created_on', 'year', order='DESC')
+    years = get_filtered_surveys(request).dates('created_on', 'year', order='DESC')
 
     # Render the main page with only the dropdown initially
     return render(request, 'survey_summary.html', {'years': years})
 
 
 @require_GET
+@role_required(['Super', 'Admin', 'Unit'])
 def citizen_chart_data(request):
     # Aggregate data for CC1, CC2, and CC3 based on the selected year
     year = request.GET.get('year_citizen')
-    # print(year)
+    surveys = get_filtered_surveys(request)
     if year:
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
-    else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys.filter(created_on__year=year)
 
     # Aggregate data for cc1, cc2, and cc3
     cc1_data = surveys.values('cc1').annotate(total=Count('cc1'))
@@ -198,20 +199,18 @@ def citizen_chart_data(request):
         'cc3_counts': cc3_counts,
     }
 
-    # print(data)
-    # Return JSON data for HTMX response
     return JsonResponse(data)
 
 
 @require_GET
+@role_required(['Super', 'Admin', 'Unit'])
 def citizen_charter_chart_data(request):
     year = request.GET.get('year_citizen_charter')
+    surveys = get_filtered_surveys(request)
 
     # Filter by selected year if provided, otherwise include all
     if year:
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
-    else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys.filter(created_on__year=year)
 
     # Aggregate counts for each choice in CC1, CC2, and CC3
     cc1_data = surveys.values('cc1').annotate(
@@ -243,13 +242,14 @@ def citizen_charter_chart_data(request):
 
     return JsonResponse(data)
 
+
+@role_required(['Super', 'Admin', 'Unit'])
 def get_sqd_data(request):
     year = request.GET.get('year_sqd') or request.GET.get('year_sgd')
+    surveys = get_filtered_surveys(request)
     # Filter by selected year if provided, otherwise include all
     if year:
-        surveys = ClientSurvey.objects.filter(created_on__year=year)
-    else:
-        surveys = ClientSurvey.objects.all()
+        surveys = surveys.filter(created_on__year=year)
 
     # Aggregate counts for each choice in SATISFACTION_CHOICES across SQD fields
     satisfaction_data = {
@@ -268,23 +268,23 @@ def get_sqd_data(request):
     labels = list(satisfaction_data.keys())
     data = list(satisfaction_data.values())
 
-    # print(labels)
-
     return JsonResponse({'labels': labels, 'data': data})
 
 
+@role_required(['Super', 'Admin', 'Unit'])
 def survey_summary(request):
     year_selected = None
     form = YearSelectionForm(request.GET or None)
 
     # Initialize empty data dictionaries
     cc1_data, cc2_data, cc3_data = {}, {}, {}
+    surveys = get_filtered_surveys(request)
 
     if form.is_valid():
         year_selected = form.cleaned_data['year']
 
         # Filter surveys by the selected year
-        surveys = ClientSurvey.objects.filter(created_on__year=year_selected)
+        surveys = surveys.filter(created_on__year=year_selected)
 
         # Aggregate counts for each choice in cc1, cc2, and cc3
         cc1_data = dict(surveys.values_list(
@@ -305,15 +305,18 @@ def survey_summary(request):
     return render(request, 'survey_summary.html', {'form': form, 'chart_data': json.dumps(chart_data), 'year_selected': year_selected})
 
 
+@role_required(['Super', 'Admin', 'Unit'])
 def manage_surveys_view(request):
     return render(request, 'manage_surveys.html')
 
 
+@role_required(['Super', 'Admin', 'Unit'])
 def feedback_view(request):
     return render(request, 'feedback.html')
 
 
 # Users
+@role_required(['Super', 'Admin'])
 def user_create(request):
     if request.method == 'POST':
         print("POST data:", request.POST)
@@ -333,8 +336,13 @@ def user_create(request):
     return render(request, 'users/user_form.html', {'form': form})
 
 
+@role_required(['Super', 'Admin'])
 def user_update(request, pk):
     user = get_object_or_404(User, pk=pk)
+    # RBAC: Admin cannot modify Super users
+    if request.user.user_level == 'Admin' and user.user_level == 'Super':
+        raise PermissionDenied
+
     if request.method == 'POST':
         form = UserForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
@@ -360,14 +368,7 @@ def user_update(request, pk):
     return render(request, 'users/user_form.html', {'form': form, 'user': user})
 
 
-def user_delete(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    if request.method == 'POST':
-        user.delete()
-        return redirect('home:user_list')
-    return render(request, 'users/user_confirm_delete.html', {'user': user})
-
-
+@role_required(['Super', 'Admin'])
 def user_list(request):
     users = User.objects.all()
     if request.headers.get('HX-Request'):
@@ -375,51 +376,20 @@ def user_list(request):
     return render(request, 'users/user_list.html', {'users': users})
 
 
-def user_create1(request):
-    if request.method == 'POST':
-        print(request.POST)
-        form = UserForm(request.POST, request.FILES)
-        if form.is_valid():
-            print(form.cleaned_data)
-            user = form.save(commit=False)
-            if form.cleaned_data["password"]:
-                user.password = make_password(form.cleaned_data["password"])
-            user.save()
-            return render(request, 'users/user_row.html', {'user': user})
-        else:
-            print(form.errors)
-    else:
-        form = UserForm()
-    return render(request, 'users/user_form.html', {'form': form})
-
-
-def user_update1(request, pk):
-    user = get_object_or_404(User, pk=pk)
-    if request.method == 'POST':
-        form = UserForm(request.POST, request.FILES, instance=user)
-        if form.is_valid():
-            user = form.save(commit=False)
-            if form.cleaned_data["password"]:
-                user.password = make_password(form.cleaned_data["password"])
-            user.save(refresh_qrcode=True)
-            return render(request, 'users/user_row.html', {'user': user})
-    else:
-        form = UserForm(instance=user)
-    return render(request, 'users/user_form.html', {'form': form})
-
-
-@ require_http_methods(['DELETE'])
+@require_http_methods(['DELETE'])
+@role_required(['Super', 'Admin'])
 def user_delete(request, pk):
     user = get_object_or_404(User, pk=pk)
+    # RBAC: Admin cannot delete Super users
+    if request.user.user_level == 'Admin' and user.user_level == 'Super':
+        raise PermissionDenied
+
     user.delete()
     return HttpResponse(status=200)
 
 
 # Unit Views
-# def unit_list(request):
-#     print("1")
-#     units = Unit.objects.all()
-#     return render(request, 'units/unit_list.html', {'units': units})
+@role_required(['Super', 'Admin'])
 def unit_list(request):
     units = Unit.objects.all()
     # Check if it's an HTMX request
@@ -428,6 +398,7 @@ def unit_list(request):
     return render(request, 'units/unit_list.html', {'units': units})
 
 
+@role_required(['Super', 'Admin'])
 def unit_create1(request):
     if request.method == 'POST':
         form = UnitForm(request.POST)
@@ -440,6 +411,7 @@ def unit_create1(request):
     return render(request, 'units/unit_form.html', {'form': form})
 
 
+@role_required(['Super', 'Admin'])
 def unit_update(request, pk):
     unit = get_object_or_404(Unit, pk=pk)
     if request.method == 'POST':
@@ -453,7 +425,8 @@ def unit_update(request, pk):
     return render(request, 'units/unit_form.html', {'form': form})
 
 
-@ require_http_methods(['DELETE'])
+@require_http_methods(['DELETE'])
+@role_required(['Super', 'Admin'])
 def unit_delete(request, pk):
     unit = get_object_or_404(Unit, pk=pk)
     unit.delete()
@@ -461,6 +434,7 @@ def unit_delete(request, pk):
 
 
 # Branch
+@role_required(['Super', 'Admin'])
 def branch_list(request):
     branches = Branch.objects.all()
     # Check if it's an HTMX request
@@ -469,6 +443,7 @@ def branch_list(request):
     return render(request, 'branches/branch_list.html', {'branches': branches})
 
 
+@role_required(['Super', 'Admin'])
 def branch_create(request):
     if request.method == 'POST':
         form = BranchForm(request.POST)
@@ -481,6 +456,7 @@ def branch_create(request):
     return render(request, 'branches/branch_form.html', {'form': form})
 
 
+@role_required(['Super', 'Admin'])
 def branch_update(request, pk):
     branch = get_object_or_404(Branch, pk=pk)
     if request.method == 'POST':
@@ -493,7 +469,8 @@ def branch_update(request, pk):
     return render(request, 'branches/branch_form.html', {'form': form})
 
 
-@ require_http_methods(['DELETE'])
+@require_http_methods(['DELETE'])
+@role_required(['Super', 'Admin'])
 def branch_delete(request, pk):
     branch = get_object_or_404(Branch, pk=pk)
     branch.delete()
@@ -501,7 +478,7 @@ def branch_delete(request, pk):
 
 
 # Department
-
+@role_required(['Super', 'Admin'])
 def department_list(request):
     departments = Department.objects.all()
     # Check if it's an HTMX request
@@ -510,6 +487,7 @@ def department_list(request):
     return render(request, 'departments/department_list.html', {'departments': departments})
 
 
+@role_required(['Super', 'Admin'])
 def department_create(request):
     if request.method == 'POST':
         form = DepartmentForm(request.POST)
@@ -522,6 +500,7 @@ def department_create(request):
     return render(request, 'departments/department_form.html', {'form': form})
 
 
+@role_required(['Super', 'Admin'])
 def department_update(request, pk):
     department = get_object_or_404(Department, pk=pk)
     if request.method == 'POST':
@@ -534,15 +513,15 @@ def department_update(request, pk):
     return render(request, 'departments/department_form.html', {'form': form})
 
 
-@ require_http_methods(['DELETE'])
+@require_http_methods(['DELETE'])
+@role_required(['Super', 'Admin'])
 def department_delete(request, pk):
     department = get_object_or_404(Department, pk=pk)
     department.delete()
     return HttpResponse(status=200)
 
 # position
-
-
+@role_required(['Super', 'Admin'])
 def position_list(request):
     positions = Position.objects.all()
     # Check if it's an HTMX request
@@ -551,6 +530,7 @@ def position_list(request):
     return render(request, 'positions/position_list.html', {'positions': positions})
 
 
+@role_required(['Super', 'Admin'])
 def position_create(request):
     if request.method == 'POST':
         form = PositionForm(request.POST)
@@ -563,6 +543,7 @@ def position_create(request):
     return render(request, 'positions/position_form.html', {'form': form})
 
 
+@role_required(['Super', 'Admin'])
 def position_update(request, pk):
     position = get_object_or_404(Position, pk=pk)
     if request.method == 'POST':
@@ -575,15 +556,15 @@ def position_update(request, pk):
     return render(request, 'positions/position_form.html', {'form': form})
 
 
-@ require_http_methods(['DELETE'])
+@require_http_methods(['DELETE'])
+@role_required(['Super', 'Admin'])
 def position_delete(request, pk):
     position = get_object_or_404(Position, pk=pk)
     position.delete()
     return HttpResponse(status=200)
 
 # services
-
-
+@role_required(['Super', 'Admin'])
 def service_list(request):
     services = Service.objects.all()
     # Check if it's an HTMX request
@@ -592,6 +573,7 @@ def service_list(request):
     return render(request, 'services/service_list.html', {'services': services})
 
 
+@role_required(['Super', 'Admin'])
 def service_create(request):
     if request.method == 'POST':
         form = ServiceForm(request.POST)
@@ -604,6 +586,7 @@ def service_create(request):
     return render(request, 'services/service_form.html', {'form': form})
 
 
+@role_required(['Super', 'Admin'])
 def service_update(request, pk):
     service = get_object_or_404(Service, pk=pk)
     if request.method == 'POST':
@@ -616,7 +599,8 @@ def service_update(request, pk):
     return render(request, 'services/service_form.html', {'form': form})
 
 
-@ require_http_methods(['DELETE'])
+@require_http_methods(['DELETE'])
+@role_required(['Super', 'Admin'])
 def service_delete(request, pk):
     service = get_object_or_404(Service, pk=pk)
     service.delete()
@@ -624,6 +608,7 @@ def service_delete(request, pk):
 
 
 # Questions
+@role_required(['Super', 'Admin'])
 def question_list(request):
     questions = Question.objects.all()
     # Check if it's an HTMX request
@@ -632,6 +617,7 @@ def question_list(request):
     return render(request, 'questions/question_list.html', {'questions': questions})
 
 
+@role_required(['Super', 'Admin'])
 def question_create(request):
     if request.method == 'POST':
         form = QuestionForm(request.POST)
@@ -644,6 +630,7 @@ def question_create(request):
     return render(request, 'questions/question_form.html', {'form': form})
 
 
+@role_required(['Super', 'Admin'])
 def question_update(request, pk):
     question = get_object_or_404(Question, pk=pk)
     if request.method == 'POST':
@@ -656,7 +643,8 @@ def question_update(request, pk):
     return render(request, 'questions/question_form.html', {'form': form})
 
 
-@ require_http_methods(['DELETE'])
+@require_http_methods(['DELETE'])
+@role_required(['Super', 'Admin'])
 def question_delete(request, pk):
     question = get_object_or_404(Question, pk=pk)
     question.delete()
@@ -773,9 +761,12 @@ def logout_view(request):
     return redirect('home:login')
 
 
-@login_required(login_url='home:login')
+@role_required(['Super', 'Admin'])
 def change_user_password(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
+    # RBAC: Admin cannot alter password of Super users
+    if request.user.user_level == 'Admin' and user.user_level == 'Super':
+        raise PermissionDenied
 
     if request.method == 'POST':
         form = CustomUserPasswordChangeForm(request.POST)
@@ -796,64 +787,12 @@ def change_user_password(request, pk):
 
 
 # Surveys
+@role_required(['Super', 'Admin', 'Unit'])
 def survey_all(request):
     return render(request, 'surveys/survey_all.html')
 
+@role_required(['Super', 'Admin', 'Unit'])
 def services_count(request):
-    # services_count = ClientSurvey.objects.annotate(service_count=Count('services')).order_by('-service_count')
-    # print(services_count)
-    # for service in services_count:
-    #     print(service.service_count)
-    # return render(request, 'surveys/services_count.html', {'services_count': services_count})
-
-    # user_last_names = {user.user_id: user.last_name for user in CustomUser.objects.all()}
-
-    # services_count = defaultdict(int)
-    # for survey in ClientSurvey.objects.prefetch_related('services') :
-    #     for service in survey.services.all():
-    #         key = (survey.user_id, service.service_name)
-    #         services_count[key] += 1
-    # print(services_count)
-    # print()
-    # for (user_id, service_name), count in services_count.items():
-    #     last_name = user_last_names.get(user_id, 'Unknown')
-    #     print(f"{user_id}, {last_name} - {service_name}: {count}")
-    # return render(request, 'surveys/services_count.html', {'services_count': services_count})
-
-    # Step 1: Build a user info map using user_id
-    # user_info_map = {}
-    # users = CustomUser.objects.select_related('department__unit_id')
-
-    # for user in users:
-    #     user_info_map[user.user_id] = {
-    #         'last_name': user.last_name,
-    #         'department': user.department.department_name if user.department else "N/A",
-    #         'unit': user.department.unit_id.unit_name if user.department and user.department.unit_id else "N/A"
-    #     }
-
-    # # Step 2: Count each service per user
-    # service_counter = defaultdict(int)
-
-    # surveys = ClientSurvey.objects.prefetch_related('services')
-
-    # for survey in surveys:
-    #     for service in survey.services.all():
-    #         key = (survey.user_id, service.service_name)
-    #         service_counter[key] += 1
-
-    # # Step 3: Display final results
-    # for (user_id, service_name), count in service_counter.items():
-    #     user_info = user_info_map.get(user_id, {
-    #         'last_name': 'Unknown',
-    #         'department': 'Unknown',
-    #         'unit': 'Unknown'
-    #     })
-    #     print(
-    #         f"User ID: {user_id}, Last Name: {user_info['last_name']}, "
-    #         f"Department: {user_info['department']}, Unit: {user_info['unit']}, "
-    #         f"Service: {service_name}, Count: {count}"
-    #     )
-
     # Step 1: Map user_id to user details including department and unit
     user_info_map = {}
     users = CustomUser.objects.select_related('department__unit_id')
@@ -867,7 +806,7 @@ def services_count(request):
 
     # Step 2: Count each service per user
     service_counter = defaultdict(int)
-    surveys = ClientSurvey.objects.prefetch_related('services')
+    surveys = get_filtered_surveys(request).prefetch_related('services')
 
     for survey in surveys:
         for service in survey.services.all():
@@ -891,19 +830,9 @@ def services_count(request):
             'count': count
         })
 
-    # Step 4: Print grouped results
-    for unit, departments in grouped_result.items():
-        print(f"\nUnit: {unit}")
-        for department, entries in departments.items():
-            print(f"  Department: {department}")
-            for entry in entries:
-                print(
-                    f"    User ID: {entry['user_id']}, Last Name: {entry['last_name']}, "
-                    f"Service: {entry['service']}, Count: {entry['count']}"
-                )
+    return render(request, 'surveys/services_count.html', {'grouped_result': grouped_result})
 
-    return render(request, 'surveys/services_count.html', {'services_count': services_count})
-
+@role_required(['Super', 'Admin', 'Unit'])
 def sqd_count(request):
     # All SQD fields
     sqd_fields = [f'sqd{i}' for i in range(9)]
@@ -912,7 +841,7 @@ def sqd_count(request):
     sqd_counts = {field: defaultdict(int) for field in sqd_fields}
 
     # Query all responses
-    surveys = ClientSurvey.objects.all().values(*sqd_fields)
+    surveys = get_filtered_surveys(request).values(*sqd_fields)
 
     # Count each value
     for survey in surveys:
@@ -920,26 +849,5 @@ def sqd_count(request):
             value = survey[field]
             if value is not None:
                 sqd_counts[field][value] += 1
-
-    # # Display the result
-    # for field in sqd_fields:
-    #     print(f"\n{field.upper()}:")
-    #     for rating in sorted(sqd_counts[field]):
-    #         print(f"  {rating}: {sqd_counts[field][rating]}")
         
-    # display result with labels
-    labels = {
-        1: 'Strongly Disagree',
-        2: 'Disagree',
-        3: 'Neither Agree nor Disagree',
-        4: 'Agree',
-        5: 'Strongly Agree',
-        0: 'Not Applicable',
-    }
-    for field in sqd_fields:
-        print(f"\n{field.upper()}:")
-        for rating in sorted(sqd_counts[field]):
-            label = labels.get(rating, "Unknown")
-            print(f"  {rating} ({label}): {sqd_counts[field][rating]}")
-    
     return render(request, 'surveys/sqd_chart.html', {'sqd_counts': sqd_counts})

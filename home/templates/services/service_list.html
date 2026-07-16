@@ -1,10 +1,12 @@
 {% extends 'admin_base.html' %}
 
 {% block content %}
-    <h2>Position List</h2>
-    <button class="btn btn-success mb-3" hx-get="{% url 'home:service_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#serviceModal">Add New Service</button>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Service List</h2>
+        <button class="btn btn-success" hx-get="{% url 'home:service_create' %}" hx-target="#modal-body" data-toggle="modal" data-target="#crudModal"><i class="fas fa-plus mr-1"></i> Add New Service</button>
+    </div>
 
-    <table class="table table-sm table-hover table-striped table-bordered mt-4" id="service-table">
+    <table class="table-premium table table-sm table-hover table-striped table-bordered" id="service-table">
         <thead>
             <tr>
                 <th>Service Name</th>
@@ -19,29 +21,4 @@
             {% endfor %}
         </tbody>
     </table>
-
-
-
-    <!-- Modal Structure -->
-    <div class="modal fade" id="serviceModal" tabindex="-1" role="dialog" aria-labelledby="serviceModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="serviceModalLabel">Service Form</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="modal-body">
-                    <!-- Content dynamically loaded here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        $(document).ready(function() {
-            $('#department-table').DataTable(); // Initialize DataTables
-        });
-    </script>
-{% endblock  %}
+{% endblock %}

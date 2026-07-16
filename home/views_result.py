@@ -4,7 +4,10 @@ from django.shortcuts import render, get_list_or_404
 from django.utils.dateparse import parse_date
 from django.db.models import Q, Count, OuterRef, Subquery, Avg
 from .models import CustomUser, ClientSurvey
+from django.core.exceptions import PermissionDenied
+from .utils import role_required, get_filtered_surveys
 
+@role_required(['Super', 'Admin'])
 def user_data_api(request):
     draw = int(request.GET.get("draw", 1))
     start = int(request.GET.get("start", 0))
@@ -85,12 +88,22 @@ def user_data_api(request):
         "data": data,
     })
 
+@role_required(['Super', 'Admin'])
 def user_table_view(request):
     return render(request, "surveys/results/user_list.html")
 
 
+@role_required(['Super', 'Admin', 'Unit'])
 def survey_user_stat_detail(request, user_id):
-    surveys = ClientSurvey.objects.filter(user_id=user_id)
+    if request.user.user_level == 'Unit':
+        try:
+            target_user = CustomUser.objects.get(user_id=user_id)
+            if not target_user.department or target_user.department.unit_id != request.user.department.unit_id:
+                raise PermissionDenied
+        except CustomUser.DoesNotExist:
+            raise PermissionDenied
+
+    surveys = get_filtered_surveys(request).filter(user_id=user_id)
 
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")

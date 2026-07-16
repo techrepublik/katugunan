@@ -2,10 +2,12 @@
 
 {% block content %}
     <!-- templates/units/unit_list.html -->
-    <h2>Unit List</h2>
-    <button class="btn btn-success mb-3" hx-get="{% url "home:unit_create" %}" hx-trigger="click" hx-target="#modal-body" data-toggle="modal" data-target="#unitModal">Add New Unit</button>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Unit List</h2>
+        <button class="btn btn-success" hx-get="{% url 'home:unit_create' %}" hx-trigger="click" hx-target="#modal-body" data-toggle="modal" data-target="#crudModal"><i class="fas fa-plus mr-1"></i> Add New Unit</button>
+    </div>
 
-    <table class="display compact table table-sm table-hover table-striped table-bordered mt-4" id="unit-table">
+    <table class="table-premium table table-sm table-hover table-striped table-bordered" id="unit-table">
         <thead>
             <tr>
                 <th>Unit Name</th>
@@ -21,27 +23,4 @@
             {% endfor %}
         </tbody>
     </table>
-    <!-- Modal Structure for CRUD Operations -->
-    <div class="modal fade" id="unitModal" tabindex="-1" role="dialog" aria-labelledby="unitModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="unitModalLabel">Unit Form</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body" id="modal-body">
-                    <!-- Content dynamically loaded here -->
-                </div>
-            </div>
-        </div>
-    </div> 
-
-    <script>
-        $(document).ready(function() {
-            $('#unit-table').DataTable(); // Initialize DataTables
-        });
-    </script>
-
 {% endblock content %}
