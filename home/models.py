@@ -105,14 +105,14 @@ class Question(models.Model):
     TEACHING = 'Teaching'
     RESEARCH = 'Research'
     SUPPORT = 'Support'
-    SUPPORT = 'Production'
+    PRODUCTION = 'Production'
     types = (
         (GENERAL, 'General'),
         (ADMIN, 'Admin'),
         (TEACHING, 'Teaching'),
         (RESEARCH, 'Research'),
         (SUPPORT, 'Support'),
-        (SUPPORT, 'Production')
+        (PRODUCTION, 'Production')
     )
 
     question_id = models.CharField(
@@ -122,7 +122,7 @@ class Question(models.Model):
         max_length=20, choices=types, default=GENERAL)
 
     def __str__(self) -> str:
-        return f'{self.question_id}- {self.question}'
+        return f'{self.question_id}- {self.question_question}'
 
     class Meta:
         ordering = ['question_id']
@@ -152,14 +152,39 @@ class CustomUser(AbstractUser):
         'Super', 'Super'), ('Unit', 'Unit'), ('Client', 'Client')], blank=True, null=True)
     department = models.ForeignKey(
         Department, on_delete=models.SET_NULL, null=True, blank=True)
+    position_status = models.CharField(max_length=20, choices=[('Permanent','Permanent'), ('COS', 'COS'), ('JO','JO')], default='Permanent')
     position = models.ForeignKey(
         Position, on_delete=models.SET_NULL, blank=True, null=True)
     picture = models.ImageField(
         upload_to=user_directory_path, null=True, blank=True)
-    qrcode = models.ImageField(
-        upload_to='qrcodes/', blank=True, null=True)  # QR code field
+    qrcode_image = models.ImageField(
+        upload_to='qrcodes/', blank=True, null=True)
+    qrcode_url = models.URLField(blank=True, null=True)
+
+    def _sync_user_qrcode(self, use_existing_qrcode_url=False):
+        """Set qrcode_url and write a PNG whose scanned payload is exactly that URL.
+
+        If use_existing_qrcode_url is True and qrcode_url is already set, keep that
+        string; otherwise set the canonical PUBLIC_BASE_URL + user_id URL.
+        """
+        if use_existing_qrcode_url and self.qrcode_url:
+            self.qrcode_url = str(self.qrcode_url).strip()
+        else:
+            self.qrcode_url = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/{self.user_id}"
+        payload = str(self.qrcode_url).strip()
+        qr = qrcode.make(payload)
+        qr_io = BytesIO()
+        qr.save(qr_io, format='PNG')
+        qr_io.seek(0)
+        filename = f"{self.user_id}.png"
+        if self.qrcode_image:
+            self.qrcode_image.delete(save=False)
+        self.qrcode_image.save(filename, File(qr_io), save=False)
+        super(CustomUser, self).save(update_fields=['qrcode_image', 'qrcode_url'])
 
     def save(self, *args, **kwargs):
+        refresh_qrcode = kwargs.pop('refresh_qrcode', False)
+        update_fields = kwargs.get('update_fields')
 
         # Set default user_level on creation if not already provided.
         # Only run this if the object is new (no primary key yet)
@@ -170,17 +195,14 @@ class CustomUser(AbstractUser):
         if not self.user_id:
             self.user_id = str(uuid.uuid4())
 
-            # Generate QR code based on user_id
-            qr = qrcode.make(self.user_id)
-            qr_io = BytesIO()
-            qr.save(qr_io, 'PNG')
-            qr_file = File(qr_io, name=f"{self.user_id}.png")
-
-            # Save the QR code to the qrcode field
-            self.qrcode.save(qr_file.name, qr_file, save=False)
-
         # Call the super save method
         super().save(*args, **kwargs)
+
+        # Regenerate QR when explicitly requested (e.g. user edit form) or on first save (no image yet).
+        # Skip on login-only last_login updates.
+        skip_qr = update_fields is not None and set(update_fields) == {'last_login'}
+        if not skip_qr and (refresh_qrcode or not self.qrcode_image):
+            self._sync_user_qrcode()
 
         # Check if there is a picture and resize it
         if self.picture:
@@ -204,7 +226,7 @@ class ClientSurvey(models.Model):
     CC1_CHOICES = [
         ('1', "I know what a CC is and I saw this office’s CC."),
         ('2', "I know what a CC is but I did NOT see this office’s CC."),
-        ('3', "I know what a CC is but I did NOT see this office’s CC."),
+        ('3', "I learned of the CC only when I saw this office’s CC."),
         ('4', "I do not know what a CC is and I did NOT see one in this office."),
     ]
 

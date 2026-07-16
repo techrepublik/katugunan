@@ -17,7 +17,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: P@ssw0rd
-      POSTGRES_DB: katugunan01
+      POSTGRES_DB: freshdb
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/

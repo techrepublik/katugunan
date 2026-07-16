@@ -86,7 +86,7 @@ def user_data_api(request):
     })
 
 def user_table_view(request):
-    return render(request, "surveys/results//user_list.html")
+    return render(request, "surveys/results/user_list.html")
 
 
 def survey_user_stat_detail(request, user_id):
@@ -139,6 +139,7 @@ def survey_user_stat_detail(request, user_id):
         "last_name": user.last_name if user else "",
         "first_name": user.first_name if user else "",
         "middle_name": user.middle_name if user else "",
+        "position_status": user.position_status if user else "",
         "email": user.email if user else "",
         "department": user.department.department_name if user and user.department else "",
         "unit": user.department.unit_id.unit_name if user and user.department and user.department.unit_id else "",

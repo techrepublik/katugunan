@@ -21,13 +21,12 @@ class UserForm(forms.ModelForm):
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(), required=False)
     email = forms.EmailField(required=True)
-    email = forms.EmailField(required=True)
 
     class Meta:
         model = User
         # fields = '__all__'
         fields = ['username', 'email', 'first_name', 'last_name', 'middle_name', 'id_number',
-                  'birth_date', 'sex', 'birth_date', 'contact_no', 'user_level',
+                  'birth_date', 'sex', 'birth_date', 'contact_no', 'user_level', 'position_status',
                   'department', 'position', 'picture'
                   ]
         widgets = {
@@ -44,6 +43,7 @@ class UserForm(forms.ModelForm):
             'user_level': forms.Select(attrs={'class': 'form-control'}),
             'department': forms.Select(attrs={'class': 'form-control'}),
             'position': forms.Select(attrs={'class': 'form-control'}),
+            'position_status': forms.Select(attrs={'class': 'form-control'}),
             'picture': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
@@ -173,11 +173,12 @@ class ServiceForm(forms.ModelForm):
 
         widgets = {
             # 'service_is_payment': forms.CheckboxInput(attrs={'class': 'form-control-sm'})
-            'service_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter service name'}),
+            'service_name': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter service name', 'rows': 3}),
             'service_time': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Duration (i.e. 5-min'}),
         }
         labels = {
             'service_is_payment': 'With payment',
+            'position_id': 'Position',
         }
 
 
@@ -239,7 +240,7 @@ class ClientSurveyForm(forms.ModelForm):
         choices=SQD_CHOICES, widget=forms.RadioSelect)
     sqd8 = forms.ChoiceField(
         choices=SQD_CHOICES, widget=forms.RadioSelect)
-    # Add other fields as needed
+    # Add other filelds as needed
 
     transaction_types = forms.MultipleChoiceField(
         choices=[
@@ -260,7 +261,7 @@ class ClientSurveyForm(forms.ModelForm):
     CC1_CHOICES = [
         ('1', "I know what a CC is and I saw this office’s CC."),
         ('2', "I know what a CC is but I did NOT see this office’s CC."),
-        ('3', "I know what a CC is but I did NOT see this office’s CC."),
+        ('3', "I learned of the CC only when I saw this office’s CC."),
         ('4', "I do not know what a CC and I did NOT see one in this office."),
     ]
 

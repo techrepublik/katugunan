@@ -243,10 +243,8 @@ def citizen_charter_chart_data(request):
 
     return JsonResponse(data)
 
-
 def get_sqd_data(request):
-    year = request.GET.get('year_sgd')
-
+    year = request.GET.get('year_sqd') or request.GET.get('year_sgd')
     # Filter by selected year if provided, otherwise include all
     if year:
         surveys = ClientSurvey.objects.filter(created_on__year=year)
@@ -257,7 +255,6 @@ def get_sqd_data(request):
     satisfaction_data = {
         choice[1]: 0 for choice in ClientSurvey.SATISFACTION_CHOICES}
     sqd_fields = [f'sqd{i}' for i in range(9)]
-
     for field in sqd_fields:
         field_data = surveys.values(
             field).annotate(count=Count(field))
@@ -268,7 +265,6 @@ def get_sqd_data(request):
                 satisfaction_label = dict(
                     ClientSurvey.SATISFACTION_CHOICES).get(choice, "N/A")
                 satisfaction_data[satisfaction_label] += count
-
     labels = list(satisfaction_data.keys())
     data = list(satisfaction_data.values())
 
@@ -356,8 +352,8 @@ def user_update(request, pk):
                 # Assign the new picture
                 user.picture = request.FILES['picture']
 
-            # Save the user with the new picture
-            user.save()
+            # Save the user with the new picture; refresh QR for updated profile
+            user.save(refresh_qrcode=True)
             return redirect('home:user_list')
     else:
         form = UserForm(instance=user)
@@ -405,7 +401,7 @@ def user_update1(request, pk):
             user = form.save(commit=False)
             if form.cleaned_data["password"]:
                 user.password = make_password(form.cleaned_data["password"])
-            user.save()
+            user.save(refresh_qrcode=True)
             return render(request, 'users/user_row.html', {'user': user})
     else:
         form = UserForm(instance=user)

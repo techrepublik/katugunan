@@ -102,10 +102,10 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="userStatsModalLabel">User Survey Statistics</h5>
+                <h5 class="modal-title" id="userStatsModalLabel">Personnel Survey Statistics</h5>
             </div>
             <div class="modal-body">
-                <div class="text-left mb-3" id="user-picture-container" style="display: none;">
+                <div class="text-center mb-3" id="user-picture-container" style="display: none;">
                     <img id="user-picture" src="" alt="User Picture" class="img-thumbnail rounded-circle"
                         style="width: 120px; height: 120px; object-fit: cover;">
                 </div>
@@ -244,25 +244,44 @@
                     const labels = Object.keys(data.sqd_averages).map(k => k.toUpperCase());
                     const values = Object.values(data.sqd_averages);
 
-                    const summaryHtml = `
-                            <p><strong>User ID:</strong> ${data.user_id}</p>
-                            <p><strong>Name:</strong> ${data.last_name}, ${data.first_name}</p>
-                            <p><strong>Email:</strong> ${data.email}</p>
-                            <p><strong>Total Surveys:</strong> ${data.total_surveys}</p>
-                            <p><strong>Region:</strong> ${data.region}</p>
-                            <p><strong>Sex:</strong> ${data.sex}</p>
-                            <table class="table table-sm table-bordered mt-3">
-                            <thead><tr><th>SQD</th><th>Average</th></tr></thead><tbody>
-                            ${Object.entries(data.sqd_averages).map(
+                    let statusClass = 'btn-secondary';
+                    if (data.position_status === 'Permanent') {
+                        statusClass = 'btn-primary';
+                    } else if (data.position_status === 'COS') {
+                        statusClass = 'btn-warning';
+                    } else if (data.position_status === 'JO') {
+                        statusClass = 'btn-danger';
+                    }
+
+                    const summaryHtml = `<div class="row">
+                                    <div class="col-md-12 text-center">
+                                        <p><strong>User ID:</strong> ${data.user_id}</p>
+                                        <p><strong>Name:</strong> ${data.last_name}, ${data.first_name} <span class="badge btn-primary">${data.email}</span><span class="badge btn-warning ml-1">${data.sex}</span></p>
+                                        <p><strong>Unit-Department:</strong> ${data.unit} - ${data.department}</p>
+                                        <p><strong>Position:</strong> ${data.position}
+                                            <span class="badge ${statusClass} ms-1">${data.position_status}</span>
+                                        </p>
+                                        <p><strong>Total Surveys:</strong> ${data.total_surveys}</p>
+                                    </div>
+                                    </div>
+                                    <hr>
+                                <h6>SQD Survey Responses</h6>
+                                <div class="row">
+                                    
+                                    <div class="col-md-3">
+                                        <table class="table table-sm table-bordered mt-3">
+                                        <thead><tr><th>SQD</th><th>Average</th></tr></thead><tbody>
+                                    ${Object.entries(data.sqd_averages).map(
                         ([sqd, val]) => `<tr><td>${sqd.toUpperCase()}</td><td>${val}</td></tr>`
-                    ).join('')}
-                                            </tbody></table>`;
+                    ).join('')}</tbody></table> 
+                            </div>
+                            <div class="col-md-9">
+                                 <canvas id="sqdChart" height="200"></canvas>
+                            </div>
+                        </div><hr>`;
 
                     $('#user-stats-content').html(`
                     ${summaryHtml}
-                            <div class="mb-3">
-                            <canvas id="sqdChart" height="200"></canvas>
-                            </div>
                     ${feedbackHtml}`);
 
 

@@ -105,5 +105,4 @@ urlpatterns = [
     path('surveys/results/user-list/', views_result.user_table_view, name='result_user_list'),
     path('api/users/', views_result.user_data_api, name='user_data_api'),
     path('api/survey-user-stat/<str:user_id>/', views_result.survey_user_stat_detail, name='survey_user_stat_detail'),
-
 ]
