@@ -1,26 +1,52 @@
-# version: '3.8'
+version: '3.8'
 
 services:
-  web:
-    build: .
-    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - .:/code
-    ports:
-      - "8000:8000"
-    restart: always
-    depends_on:
-      - db
-
   db:
-    image: postgres:13
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: P@ssw0rd
       POSTGRES_DB: freshdb
+    ports:
+      - "5432:5432"
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:P%40ssw0rd@db:5432/freshdb
+      - SECRET_KEY=super_secret_katugunan_key_2026
+      - PUBLIC_BASE_URL=http://localhost:3000
+    restart: always
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./nextjs
+      dockerfile: Dockerfile
+    command: npm run dev
+    volumes:
+      - ./nextjs:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    restart: always
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
+  media_data:
