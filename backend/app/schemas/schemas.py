@@ -62,8 +62,9 @@ class OrgNodeBase(BaseModel):
     name: str
     short_name: Optional[str] = None
     address: Optional[str] = None
-    node_type: NodeType
+    node_type: str
     parent_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     metadata_info: Optional[Dict[str, Any]] = None
 
 class OrgNodeCreate(OrgNodeBase):
@@ -73,8 +74,9 @@ class OrgNodeUpdate(BaseModel):
     name: Optional[str] = None
     short_name: Optional[str] = None
     address: Optional[str] = None
-    node_type: Optional[NodeType] = None
+    node_type: Optional[str] = None
     parent_id: Optional[int] = None
+    assigned_user_id: Optional[int] = None
     metadata_info: Optional[Dict[str, Any]] = None
 
 class OrgNodeOut(OrgNodeBase):

@@ -24,7 +24,8 @@ class OrganizationNode(SQLModel, table=True):
     name: str = Field(index=True)
     short_name: Optional[str] = None
     address: Optional[str] = None
-    node_type: NodeType = Field(index=True)
+    node_type: str = Field(index=True)
+    assigned_user_id: Optional[int] = Field(default=None, foreign_key="users.id", nullable=True)
     
     parent_id: Optional[int] = Field(default=None, foreign_key="organization_nodes.id")
     

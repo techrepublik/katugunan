@@ -49,7 +49,7 @@ async def get_unit_node_for_user(session: AsyncSession, user: User) -> Optional[
         return None
     ancestors = await get_node_ancestors(session, user.org_node_id)
     for ancestor in ancestors:
-        if ancestor.node_type == NodeType.UNIT:
+        if ancestor.node_type and ancestor.node_type.upper() == "UNIT":
             return ancestor
     return None
 
@@ -349,11 +349,12 @@ async def get_dashboard_stats(session: AsyncSession, user: User) -> dict:
     top_officers_list = sorted(top_officers_list, key=lambda x: (x["avg_rating"], x["surveys_count"]), reverse=True)[:5]
     stats["top_officers"] = top_officers_list
 
-    if user.user_level in [UserLevel.SUPER, UserLevel.ADMIN]:
-        unit_count_stmt = select(func.count(OrganizationNode.id)).where(OrganizationNode.node_type == NodeType.UNIT)
+    user_level_lower = user.user_level.lower() if user.user_level else ""
+    if user_level_lower in ["super", "admin"]:
+        unit_count_stmt = select(func.count(OrganizationNode.id)).where(func.upper(OrganizationNode.node_type) == "UNIT")
         stats["units"] = (await session.execute(unit_count_stmt)).scalar() or 0
         
-        dept_count_stmt = select(func.count(OrganizationNode.id)).where(OrganizationNode.node_type == NodeType.DEPARTMENT)
+        dept_count_stmt = select(func.count(OrganizationNode.id)).where(func.upper(OrganizationNode.node_type) == "DEPARTMENT")
         stats["departments"] = (await session.execute(dept_count_stmt)).scalar() or 0
         
     return stats
