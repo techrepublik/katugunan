@@ -1,8 +1,7 @@
 {
-  "/not-found": "app/not-found.js",
   "/admin/org-tree/page": "app/admin/org-tree/page.js",
   "/admin/services/page": "app/admin/services/page.js",
   "/survey/[username]/page": "app/survey/[username]/page.js",
-  "/admin/questions/page": "app/admin/questions/page.js",
-  "/admin/users/page": "app/admin/users/page.js"
+  "/admin/users/page": "app/admin/users/page.js",
+  "/admin/questions/page": "app/admin/questions/page.js"
 }

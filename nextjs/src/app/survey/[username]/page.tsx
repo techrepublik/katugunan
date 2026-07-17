@@ -212,24 +212,67 @@ export default function PublicSurveyPage({ params }: { params: { username: strin
           </div>
 
           {services.length > 0 && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase">Transactions Evaluated</label>
-              <div className="space-y-2 border border-slate-200 p-4 rounded-lg">
-                {services.map(s => (
-                  <div key={s.id} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id={`srv-${s.id}`}
-                      checked={selectedServices.includes(s.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedServices(prev => [...prev, s.id]);
-                        else setSelectedServices(prev => prev.filter(id => id !== s.id));
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Transactions Evaluated
+              </label>
+              <p className="text-[10px] text-slate-400 -mt-1 leading-relaxed">
+                Select one or more transactions you availed of today to evaluate.
+              </p>
+              
+              <div className="grid grid-cols-1 gap-2">
+                {services.map(s => {
+                  const isChecked = selectedServices.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        if (isChecked) {
+                          setSelectedServices(prev => prev.filter(id => id !== s.id));
+                        } else {
+                          setSelectedServices(prev => [...prev, s.id]);
+                        }
                       }}
-                      className="h-4 w-4 border-slate-200 text-emerald-700"
-                    />
-                    <label htmlFor={`srv-${s.id}`} className="text-sm text-slate-700">{s.service_name}</label>
-                  </div>
-                ))}
+                      className={`flex items-center justify-between text-left p-3.5 rounded-xl border text-xs font-medium transition-all duration-200 ${
+                        isChecked
+                          ? "bg-emerald-50/40 border-emerald-500 text-emerald-900 shadow-sm scale-[1.005]"
+                          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50/60"
+                      }`}
+                    >
+                      <div className="flex flex-col pr-4">
+                        <span className="font-semibold text-slate-800">{s.service_name}</span>
+                        <div className="flex gap-2 mt-1.5 items-center">
+                          <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                            {s.service_type}
+                          </span>
+                          {s.service_time && (
+                            <span className="text-[9px] text-slate-400 font-medium">
+                              ⏳ {s.service_time}
+                            </span>
+                          )}
+                          {s.service_is_payment && (
+                            <span className="text-[9px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                              Paid
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all shrink-0 ${
+                        isChecked 
+                          ? "border-emerald-500 bg-emerald-500 text-white" 
+                          : "border-slate-300 bg-white"
+                      }`}>
+                        {isChecked && (
+                          <svg className="w-3.5 h-3.5 stroke-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
