@@ -162,7 +162,7 @@ export default function QuestionsPage() {
       <Sidebar userLevel={user?.user_level || "Unit"} />
       <div className="flex-1 flex flex-col">
         <Navbar username={user ? `${user.first_name} ${user.last_name}` : "Admin"} userLevel={user?.user_level || "Unit"} />
-        
+
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto space-y-6">
             <div>
@@ -209,7 +209,7 @@ export default function QuestionsPage() {
                             {/* Question ID Column */}
                             <td className="p-4 font-bold text-slate-800">
                               {isEditing ? (
-                                <input 
+                                <input
                                   type="text"
                                   required
                                   value={editQuestionId}
@@ -224,7 +224,7 @@ export default function QuestionsPage() {
                             {/* Classification Column */}
                             <td className="p-4">
                               {isEditing ? (
-                                <select 
+                                <select
                                   value={editQuestionType}
                                   onChange={(e) => setEditQuestionType(e.target.value)}
                                   className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500"
@@ -246,7 +246,7 @@ export default function QuestionsPage() {
                             {/* Question text Column */}
                             <td className="p-4 text-slate-600 font-medium">
                               {isEditing ? (
-                                <textarea 
+                                <textarea
                                   required
                                   value={editQuestionText}
                                   onChange={(e) => setEditQuestionText(e.target.value)}
@@ -262,7 +262,7 @@ export default function QuestionsPage() {
                               <td className="p-4 text-right">
                                 {isEditing ? (
                                   <div className="flex justify-end gap-1.5">
-                                    <button 
+                                    <button
                                       onClick={() => handleUpdateQuestion(q.id)}
                                       disabled={isUpdating}
                                       className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
@@ -270,7 +270,7 @@ export default function QuestionsPage() {
                                     >
                                       {isUpdating ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
                                     </button>
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         setEditingId(null);
                                       }}
@@ -282,7 +282,7 @@ export default function QuestionsPage() {
                                   </div>
                                 ) : (
                                   <div className="flex justify-end gap-1.5">
-                                    <button 
+                                    <button
                                       onClick={() => {
                                         setEditingId(q.id);
                                         setEditQuestionId(q.question_id);
@@ -294,7 +294,7 @@ export default function QuestionsPage() {
                                     >
                                       <Edit2 size={13} />
                                     </button>
-                                    <button 
+                                    <button
                                       onClick={() => handleDeleteQuestion(q.id)}
                                       className="p-1.5 text-slate-400 hover:text-red-650 rounded-lg hover:bg-red-50 transition-all"
                                       title="Delete Question"
@@ -314,10 +314,10 @@ export default function QuestionsPage() {
                         <tr className="bg-slate-50/50">
                           {/* New ID */}
                           <td className="p-4">
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               required
-                              value={questionId} 
+                              value={questionId}
                               onChange={(e) => setQuestionId(e.target.value)}
                               className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-bold"
                               placeholder="e.g. SQD9"
@@ -326,8 +326,8 @@ export default function QuestionsPage() {
 
                           {/* New Type */}
                           <td className="p-4">
-                            <select 
-                              value={questionType} 
+                            <select
+                              value={questionType}
                               onChange={(e) => setQuestionType(e.target.value)}
                               className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
                             >
@@ -342,10 +342,10 @@ export default function QuestionsPage() {
 
                           {/* New Text */}
                           <td className="p-4">
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               required
-                              value={questionText} 
+                              value={questionText}
                               onChange={(e) => setQuestionText(e.target.value)}
                               className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-medium"
                               placeholder="Enter new question statement..."
@@ -354,7 +354,7 @@ export default function QuestionsPage() {
 
                           {/* Action Button */}
                           <td className="p-4 text-right">
-                            <button 
+                            <button
                               type="button"
                               onClick={handleAddQuestion}
                               disabled={creating}
