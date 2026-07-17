@@ -46,10 +46,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/admin/metadata/page.js"
     ],
-    "/not-found": [
+    "/admin/profile/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/not-found.js"
+      "static/chunks/app/admin/profile/page.js"
+    ],
+    "/admin/audit-logs/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/audit-logs/page.js"
+    ],
+    "/admin/roles-permissions/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/roles-permissions/page.js"
     ]
   }
 }

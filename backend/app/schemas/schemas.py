@@ -22,9 +22,10 @@ class UserBase(BaseModel):
     sex: Optional[str] = None
     birth_date: Optional[str] = None
     contact_no: Optional[str] = None
-    user_level: UserLevel = UserLevel.CLIENT
+    user_level: str = "Client"
     org_node_id: Optional[int] = None
     is_active: bool = True
+    permissions: Optional[List[str]] = []
 
 class UserCreate(UserBase):
     password: str
@@ -38,10 +39,11 @@ class UserUpdate(BaseModel):
     sex: Optional[str] = None
     birth_date: Optional[str] = None
     contact_no: Optional[str] = None
-    user_level: Optional[UserLevel] = None
+    user_level: Optional[str] = None
     org_node_id: Optional[int] = None
     password: Optional[str] = None
     is_active: Optional[bool] = None
+    permissions: Optional[List[str]] = None
 
 class UserOut(UserBase):
     id: int
@@ -50,6 +52,7 @@ class UserOut(UserBase):
     qrcode_image_url: Optional[str] = None
     qrcode_payload: Optional[str] = None
     registered_on: datetime
+    permissions: Optional[List[str]] = []
 
     class Config:
         from_attributes = True
@@ -215,5 +218,44 @@ class RegionCreate(BaseModel):
 class RegionOut(BaseModel):
     id: int
     name: str
+    class Config:
+        from_attributes = True
+
+class AuditLogOut(BaseModel):
+    id: int
+    timestamp: datetime
+    username: str
+    action: str
+    details: str
+    ip_address: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class PermissionCreate(BaseModel):
+    name: str
+    label: str
+    description: Optional[str] = None
+
+class PermissionOut(BaseModel):
+    id: int
+    name: str
+    label: str
+    description: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class RoleCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    permissions: Optional[List[str]] = []
+
+class RoleOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    permissions: Optional[List[str]] = []
+
     class Config:
         from_attributes = True

@@ -53,3 +53,36 @@ allow_admin = RoleChecker([UserLevel.SUPER, UserLevel.ADMIN])
 
 # Super/Admin/Unit dashboard permission guard
 allow_dashboard = RoleChecker([UserLevel.SUPER, UserLevel.ADMIN, UserLevel.UNIT])
+
+class PermissionChecker:
+    def __init__(self, required_permission: str):
+        self.required_permission = required_permission
+
+    async def __call__(self, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)) -> User:
+        # Super level users have all permissions implicitly
+        if user.user_level == UserLevel.SUPER or user.user_level == "Super":
+            return user
+            
+        # Resolve role permissions
+        role_permissions = []
+        if user.user_level:
+            from app.models.models import Role
+            from sqlmodel import select
+            # User level can be a string or enum
+            level_str = user.user_level.value if hasattr(user.user_level, "value") else str(user.user_level)
+            res = await session.execute(select(Role).where(Role.name == level_str))
+            role = res.scalar_one_or_none()
+            if role and role.permissions:
+                role_permissions = role.permissions
+            
+        # Combine role permissions + user-specific overrides
+        user_perms = set(role_permissions) | set(user.permissions or [])
+        if self.required_permission not in user_perms:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"The user doesn't have the '{self.required_permission}' permission"
+            )
+        return user
+
+def has_permission(permission_name: str) -> PermissionChecker:
+    return PermissionChecker(permission_name)

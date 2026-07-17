@@ -5,8 +5,8 @@ from sqlmodel import select, and_, or_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.models import OrganizationNode, User, Service, Question, ClientSurvey, SurveyServiceLink, NodeType, UserLevel, ClientType, Region
-from app.schemas.schemas import UserCreate, OrgNodeCreate, ServiceCreate, QuestionCreate, SurveyCreate, ClientTypeCreate, RegionCreate
+from app.models.models import OrganizationNode, User, Service, Question, ClientSurvey, SurveyServiceLink, NodeType, UserLevel, ClientType, Region, AuditLog, Permission, Role
+from app.schemas.schemas import UserCreate, OrgNodeCreate, ServiceCreate, QuestionCreate, SurveyCreate, ClientTypeCreate, RegionCreate, PermissionCreate, RoleCreate
 from app.core.security import get_password_hash
 from app.core.config import settings
 
@@ -80,10 +80,21 @@ async def get_org_node_tree(session: AsyncSession) -> List[OrganizationNode]:
 # User CRUD
 async def create_user(session: AsyncSession, user_in: UserCreate) -> User:
     hashed_pwd = get_password_hash(user_in.password)
-    user_data = user_in.model_dump(exclude={"password"})
+    user_data = user_in.model_dump(exclude={"password", "permissions"})
     
     db_user = User(**user_data, hashed_password=hashed_pwd)
     
+    # Set default permissions if not provided in user_in
+    if user_in.permissions:
+        db_user.permissions = user_in.permissions
+    else:
+        if user_in.user_level == UserLevel.SUPER:
+            db_user.permissions = ["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs"]
+        elif user_in.user_level == UserLevel.ADMIN:
+            db_user.permissions = ["manage_services", "manage_questions", "manage_metadata", "view_audit_logs"]
+        else:
+            db_user.permissions = []
+            
     # Auto-generate QR code payload using UUID
     import uuid
     db_user.uuid = str(uuid.uuid4())
@@ -382,3 +393,87 @@ async def create_region(session: AsyncSession, r_in: RegionCreate) -> Region:
     await session.commit()
     await session.refresh(db_r)
     return db_r
+
+async def create_audit_log(session: AsyncSession, username: str, action: str, details: str, ip_address: Optional[str] = None) -> AuditLog:
+    db_log = AuditLog(username=username, action=action, details=details, ip_address=ip_address)
+    session.add(db_log)
+    await session.commit()
+    await session.refresh(db_log)
+    return db_log
+
+async def get_audit_logs(session: AsyncSession) -> List[AuditLog]:
+    stmt = select(AuditLog).order_by(AuditLog.timestamp.desc())
+    res = await session.execute(stmt)
+    return res.scalars().all()
+
+# Permission CRUD
+async def get_permissions(session: AsyncSession) -> List[Permission]:
+    stmt = select(Permission).order_by(Permission.name)
+    res = await session.execute(stmt)
+    return res.scalars().all()
+
+async def get_permission(session: AsyncSession, p_id: int) -> Optional[Permission]:
+    stmt = select(Permission).where(Permission.id == p_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+async def get_permission_by_name(session: AsyncSession, name: str) -> Optional[Permission]:
+    stmt = select(Permission).where(Permission.name == name)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+async def create_permission(session: AsyncSession, p_in: PermissionCreate) -> Permission:
+    db_p = Permission.model_validate(p_in)
+    session.add(db_p)
+    await session.commit()
+    await session.refresh(db_p)
+    return db_p
+
+async def update_permission(session: AsyncSession, db_p: Permission, p_in: PermissionCreate) -> Permission:
+    db_p.name = p_in.name
+    db_p.label = p_in.label
+    db_p.description = p_in.description
+    session.add(db_p)
+    await session.commit()
+    await session.refresh(db_p)
+    return db_p
+
+async def delete_permission(session: AsyncSession, db_p: Permission) -> None:
+    await session.delete(db_p)
+    await session.commit()
+
+# Role CRUD
+async def get_roles(session: AsyncSession) -> List[Role]:
+    stmt = select(Role).order_by(Role.name)
+    res = await session.execute(stmt)
+    return res.scalars().all()
+
+async def get_role(session: AsyncSession, r_id: int) -> Optional[Role]:
+    stmt = select(Role).where(Role.id == r_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+async def get_role_by_name(session: AsyncSession, name: str) -> Optional[Role]:
+    stmt = select(Role).where(Role.name == name)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+async def create_role(session: AsyncSession, r_in: RoleCreate) -> Role:
+    db_role = Role.model_validate(r_in)
+    session.add(db_role)
+    await session.commit()
+    await session.refresh(db_role)
+    return db_role
+
+async def update_role(session: AsyncSession, db_role: Role, r_in: RoleCreate) -> Role:
+    db_role.name = r_in.name
+    db_role.description = r_in.description
+    db_role.permissions = r_in.permissions
+    session.add(db_role)
+    await session.commit()
+    await session.refresh(db_role)
+    return db_role
+
+async def delete_role(session: AsyncSession, db_role: Role) -> None:
+    await session.delete(db_role)
+    await session.commit()

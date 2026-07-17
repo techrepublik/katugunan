@@ -358,7 +358,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Rank-Based Top Performing Officers (Valuable Scoped Insight per RBAC) */}
-            {stats.top_officers && stats.top_officers.length > 0 && (
+            {stats?.top_officers && stats.top_officers.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
                 <div>
                   <h3 className="text-md font-bold text-slate-800">

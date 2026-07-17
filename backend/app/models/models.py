@@ -58,7 +58,7 @@ class User(SQLModel, table=True):
     sex: Optional[str] = None # M or F
     birth_date: Optional[str] = None
     contact_no: Optional[str] = None
-    user_level: UserLevel = Field(default=UserLevel.CLIENT)
+    user_level: str = Field(default="Client")
     
     org_node_id: Optional[int] = Field(default=None, foreign_key="organization_nodes.id", nullable=True)
     
@@ -67,6 +67,7 @@ class User(SQLModel, table=True):
     qrcode_payload: Optional[str] = None
     is_active: bool = Field(default=True)
     registered_on: datetime = Field(default_factory=datetime.utcnow)
+    permissions: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSONB))
 
 class Service(SQLModel, table=True):
     __tablename__ = "services"
@@ -143,3 +144,29 @@ class Region(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(unique=True, index=True)
+
+class AuditLog(SQLModel, table=True):
+    __tablename__ = "audit_logs"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    username: str = Field(index=True)
+    action: str = Field(index=True)
+    details: str
+    ip_address: Optional[str] = None
+
+class Permission(SQLModel, table=True):
+    __tablename__ = "permissions"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True, index=True)
+    label: str
+    description: Optional[str] = None
+
+class Role(SQLModel, table=True):
+    __tablename__ = "roles"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True, index=True)
+    description: Optional[str] = None
+    permissions: Optional[List[str]] = Field(default_factory=list, sa_column=Column(JSONB))

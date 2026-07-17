@@ -27,9 +27,10 @@ from sqlmodel import text
 
 @app.on_event("startup")
 async def on_startup():
-    # Dynamic DB schema updates: add uuid column if not present
+    # Dynamic DB schema updates: add uuid and permissions column if not present
     async with engine.begin() as conn:
         await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS uuid VARCHAR(36);"))
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB;"))
         await conn.run_sync(SQLModel.metadata.create_all)
         
     # Backfill UUIDs & update QR payload and code images for users lacking a UUID
@@ -52,7 +53,7 @@ async def on_startup():
             await session.commit()
 
     # Seed default Client Types & Regions if empty
-    from app.models.models import ClientType, Region
+    from app.models.models import ClientType, Region, Permission, Role
     async with AsyncSession(engine) as session:
         ct_res = await session.exec(select(ClientType))
         if not ct_res.first():
@@ -66,6 +67,31 @@ async def on_startup():
             for r_name in default_regions:
                 session.add(Region(name=r_name))
                 
+        # Seed default permissions if empty
+        perm_res = await session.exec(select(Permission))
+        if not perm_res.first():
+            default_perms = [
+                {"name": "manage_users", "label": "Manage Users", "description": "Allows creating, updating, and deleting system accounts"},
+                {"name": "manage_services", "label": "Manage Services", "description": "Allows modification of service catalog configurations"},
+                {"name": "manage_questions", "label": "Manage Questions", "description": "Allows editing survey evaluation questions"},
+                {"name": "manage_metadata", "label": "Manage Metadata", "description": "Allows editing region and client type dropdown options"},
+                {"name": "view_audit_logs", "label": "View Audit Logs", "description": "Allows viewing database-level action tracking logs"}
+            ]
+            for p in default_perms:
+                session.add(Permission(**p))
+
+        # Seed default roles if empty
+        role_res = await session.exec(select(Role))
+        if not role_res.first():
+            default_roles = [
+                {"name": "Super", "description": "Super Administrator with complete system access", "permissions": ["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs"]},
+                {"name": "Admin", "description": "Standard Administrator with write permissions except user accounts modification", "permissions": ["manage_services", "manage_questions", "manage_metadata", "view_audit_logs"]},
+                {"name": "Unit", "description": "Standard personnel account with view dashboard access", "permissions": []},
+                {"name": "Client", "description": "End-user / Client account for filling out surveys", "permissions": []}
+            ]
+            for r in default_roles:
+                session.add(Role(**r))
+
         await session.commit()
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
