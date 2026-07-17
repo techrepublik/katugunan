@@ -77,15 +77,16 @@ async def read_user_me(
     if current_user.user_level:
         from app.models.models import Role
         from sqlmodel import select
-        level_str = current_user.user_level.value if hasattr(current_user.user_level, "value") else str(current_user.user_level)
-        res = await session.execute(select(Role).where(Role.name == level_str))
+        level_str = (current_user.user_level.value if hasattr(current_user.user_level, "value") else str(current_user.user_level)).lower()
+        res = await session.execute(select(Role).where(text("LOWER(name) = :name")).params(name=level_str))
         role = res.scalar_one_or_none()
         if role and role.permissions:
             role_permissions = role.permissions
             
     # Combine role permissions + overrides
     # If Super, they get all permissions
-    if current_user.user_level in [UserLevel.SUPER, "Super"]:
+    curr_level_lower = (current_user.user_level.value if hasattr(current_user.user_level, "value") else str(current_user.user_level)).lower() if current_user.user_level else ""
+    if curr_level_lower == "super":
         from app.models.models import Permission
         from sqlmodel import select
         all_perms_res = await session.execute(select(Permission))
@@ -364,7 +365,9 @@ async def update_user_admin(
         raise HTTPException(status_code=404, detail="User not found")
         
     # RBAC constraint: Admin accounts cannot edit Super accounts
-    if current_user.user_level == UserLevel.ADMIN and db_user.user_level == UserLevel.SUPER:
+    curr_level = (current_user.user_level.value if hasattr(current_user.user_level, "value") else str(current_user.user_level)).lower() if current_user.user_level else ""
+    db_level = (db_user.user_level.value if hasattr(db_user.user_level, "value") else str(db_user.user_level)).lower() if db_user.user_level else ""
+    if curr_level == "admin" and db_level == "super":
         raise HTTPException(status_code=403, detail="Admin level users cannot modify Super level accounts")
         
     if user_in.email is not None:
@@ -389,12 +392,13 @@ async def update_user_admin(
         db_user.is_active = user_in.is_active
         
     if user_in.user_level is not None:
-        if current_user.user_level == UserLevel.ADMIN and user_in.user_level == UserLevel.SUPER:
+        target_level = (user_in.user_level.value if hasattr(user_in.user_level, "value") else str(user_in.user_level)).lower()
+        if curr_level == "admin" and target_level == "super":
             raise HTTPException(status_code=403, detail="Admin level users cannot promote accounts to Super level")
         db_user.user_level = user_in.user_level
         
     if user_in.permissions is not None:
-        if current_user.user_level == UserLevel.ADMIN:
+        if curr_level == "admin":
             admin_perms = current_user.permissions or []
             for p in user_in.permissions:
                 if p not in admin_perms:
@@ -415,7 +419,7 @@ async def update_user_admin(
         f"Admin updated settings for user: {db_user.username}"
     )
     return db_user
-
+ 
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: int,
@@ -426,7 +430,9 @@ async def delete_user(
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    if current_user.user_level == UserLevel.ADMIN and db_user.user_level == UserLevel.SUPER:
+    curr_level = (current_user.user_level.value if hasattr(current_user.user_level, "value") else str(current_user.user_level)).lower() if current_user.user_level else ""
+    db_level = (db_user.user_level.value if hasattr(db_user.user_level, "value") else str(db_user.user_level)).lower() if db_user.user_level else ""
+    if curr_level == "admin" and db_level == "super":
         raise HTTPException(status_code=403, detail="Admin level users cannot delete Super level accounts")
         
     username_deleted = db_user.username

@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import ValidationError
+from sqlmodel import text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import settings
@@ -38,10 +39,11 @@ async def get_current_user(
 
 class RoleChecker:
     def __init__(self, allowed_roles: list[UserLevel]):
-        self.allowed_roles = allowed_roles
+        self.allowed_roles = [r.value.lower() if hasattr(r, "value") else str(r).lower() for r in allowed_roles]
 
     def __call__(self, user: User = Depends(get_current_user)) -> User:
-        if user.user_level not in self.allowed_roles:
+        user_role = user.user_level.lower() if user.user_level else ""
+        if user_role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="The user doesn't have enough privileges"
@@ -59,8 +61,9 @@ class PermissionChecker:
         self.required_permission = required_permission
 
     async def __call__(self, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)) -> User:
-        # Super level users have all permissions implicitly
-        if user.user_level == UserLevel.SUPER or user.user_level == "Super":
+        user_role = user.user_level.lower() if user.user_level else ""
+        # Super level users have all privileges implicitly
+        if user_role == "super":
             return user
             
         # Resolve role permissions
@@ -68,9 +71,8 @@ class PermissionChecker:
         if user.user_level:
             from app.models.models import Role
             from sqlmodel import select
-            # User level can be a string or enum
-            level_str = user.user_level.value if hasattr(user.user_level, "value") else str(user.user_level)
-            res = await session.execute(select(Role).where(Role.name == level_str))
+            # Check case-insensitively or exact match
+            res = await session.execute(select(Role).where(text("LOWER(name) = :name")).params(name=user_role))
             role = res.scalar_one_or_none()
             if role and role.permissions:
                 role_permissions = role.permissions

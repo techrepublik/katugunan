@@ -110,16 +110,6 @@ eval("Promise.resolve(/*! import() eager */).then(__webpack_require__.t.bind(__w
 
 /***/ }),
 
-/***/ "(ssr)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2Fapp%2Fnode_modules%2Fnext%2Ffont%2Fgoogle%2Ftarget.css%3F%7B%22path%22%3A%22src%2Fapp%2Flayout.tsx%22%2C%22import%22%3A%22Outfit%22%2C%22arguments%22%3A%5B%7B%22subsets%22%3A%5B%22latin%22%5D%2C%22variable%22%3A%22--font-outfit%22%7D%5D%2C%22variableName%22%3A%22outfit%22%7D&modules=%2Fapp%2Fsrc%2Fapp%2Fglobals.css&server=true!":
-/*!**********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2Fapp%2Fnode_modules%2Fnext%2Ffont%2Fgoogle%2Ftarget.css%3F%7B%22path%22%3A%22src%2Fapp%2Flayout.tsx%22%2C%22import%22%3A%22Outfit%22%2C%22arguments%22%3A%5B%7B%22subsets%22%3A%5B%22latin%22%5D%2C%22variable%22%3A%22--font-outfit%22%7D%5D%2C%22variableName%22%3A%22outfit%22%7D&modules=%2Fapp%2Fsrc%2Fapp%2Fglobals.css&server=true! ***!
-  \**********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
-/***/ (() => {
-
-
-
-/***/ }),
-
 /***/ "(ssr)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2Fapp%2Fsrc%2Fapp%2Fadmin%2Forg-tree%2Fpage.tsx&server=true!":
 /*!***************************************************************************************************************************************************************!*\
   !*** ./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2Fapp%2Fsrc%2Fapp%2Fadmin%2Forg-tree%2Fpage.tsx&server=true! ***!
@@ -127,6 +117,16 @@ eval("Promise.resolve(/*! import() eager */).then(__webpack_require__.t.bind(__w
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
 
 eval("Promise.resolve(/*! import() eager */).then(__webpack_require__.bind(__webpack_require__, /*! ./src/app/admin/org-tree/page.tsx */ \"(ssr)/./src/app/admin/org-tree/page.tsx\"))//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHNzcikvLi9ub2RlX21vZHVsZXMvbmV4dC9kaXN0L2J1aWxkL3dlYnBhY2svbG9hZGVycy9uZXh0LWZsaWdodC1jbGllbnQtZW50cnktbG9hZGVyLmpzP21vZHVsZXM9JTJGYXBwJTJGc3JjJTJGYXBwJTJGYWRtaW4lMkZvcmctdHJlZSUyRnBhZ2UudHN4JnNlcnZlcj10cnVlISIsIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZXMiOlsid2VicGFjazovL2thdHVndW5hbi1mcm9udGVuZC8/MjUwOCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQoLyogd2VicGFja01vZGU6IFwiZWFnZXJcIiAqLyBcIi9hcHAvc3JjL2FwcC9hZG1pbi9vcmctdHJlZS9wYWdlLnRzeFwiKSJdLCJuYW1lcyI6W10sInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///(ssr)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2Fapp%2Fsrc%2Fapp%2Fadmin%2Forg-tree%2Fpage.tsx&server=true!\n");
+
+/***/ }),
+
+/***/ "(ssr)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2Fapp%2Fsrc%2Fapp%2Fglobals.css&modules=%2Fapp%2Fnode_modules%2Fnext%2Ffont%2Fgoogle%2Ftarget.css%3F%7B%22path%22%3A%22src%2Fapp%2Flayout.tsx%22%2C%22import%22%3A%22Outfit%22%2C%22arguments%22%3A%5B%7B%22subsets%22%3A%5B%22latin%22%5D%2C%22variable%22%3A%22--font-outfit%22%7D%5D%2C%22variableName%22%3A%22outfit%22%7D&server=true!":
+/*!**********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2Fapp%2Fsrc%2Fapp%2Fglobals.css&modules=%2Fapp%2Fnode_modules%2Fnext%2Ffont%2Fgoogle%2Ftarget.css%3F%7B%22path%22%3A%22src%2Fapp%2Flayout.tsx%22%2C%22import%22%3A%22Outfit%22%2C%22arguments%22%3A%5B%7B%22subsets%22%3A%5B%22latin%22%5D%2C%22variable%22%3A%22--font-outfit%22%7D%5D%2C%22variableName%22%3A%22outfit%22%7D&server=true! ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ (() => {
+
+
 
 /***/ }),
 
