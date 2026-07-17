@@ -152,6 +152,11 @@ async def get_questions(session: AsyncSession) -> List[Question]:
     res = await session.execute(stmt)
     return res.scalars().all()
 
+async def get_question(session: AsyncSession, q_id: int) -> Optional[Question]:
+    stmt = select(Question).where(Question.id == q_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
 # ClientSurvey CRUD
 async def create_survey(session: AsyncSession, survey_in: SurveyCreate) -> ClientSurvey:
     survey_data = survey_in.model_dump(exclude={"service_ids"})

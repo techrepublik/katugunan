@@ -174,6 +174,35 @@ async def read_questions(
 ) -> Any:
     return await crud.get_questions(session)
 
+@router.put("/questions/{q_id}", response_model=schemas.QuestionOut, dependencies=[Depends(deps.allow_admin)])
+async def update_question_route(
+    q_id: int,
+    question_in: schemas.QuestionCreate,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_question = await crud.get_question(session, q_id)
+    if not db_question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    db_question.question_id = question_in.question_id
+    db_question.question_question = question_in.question_question
+    db_question.question_type = question_in.question_type
+    session.add(db_question)
+    await session.commit()
+    await session.refresh(db_question)
+    return db_question
+
+@router.delete("/questions/{q_id}", dependencies=[Depends(deps.allow_admin)])
+async def delete_question_route(
+    q_id: int,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_question = await crud.get_question(session, q_id)
+    if not db_question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    await session.delete(db_question)
+    await session.commit()
+    return {"success": True}
+
 # Users Endpoints
 @router.post("/users", response_model=schemas.UserOut, dependencies=[Depends(deps.allow_admin)])
 async def create_user_route(
