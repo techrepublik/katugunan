@@ -7,7 +7,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import settings
 from app.core.db import get_session
-from app.core.security import ALGORITHM
 from app.models.models import User, UserLevel
 from app.schemas.schemas import TokenPayload
 from app.crud import crud

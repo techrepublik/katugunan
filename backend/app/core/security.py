@@ -1,16 +1,40 @@
+import bcrypt
+import hashlib
+import base64
 from datetime import datetime, timedelta, timezone
 from typing import Any, Union
 from jose import jwt
-from passlib.context import CryptContext
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def verify_django_pbkdf2(password: str, hashed_password: str) -> bool:
+    try:
+        parts = hashed_password.split('$')
+        if len(parts) != 4 or parts[0] != 'pbkdf2_sha256':
+            return False
+        algorithm, iterations, salt, hash_val = parts
+        iterations = int(iterations)
+        
+        dk = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt.encode('utf-8'),
+            iterations
+        )
+        calculated = base64.b64encode(dk).decode('utf-8')
+        return calculated == hash_val
+    except Exception:
+        return False
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    if hashed_password.startswith('pbkdf2_sha256$'):
+        return verify_django_pbkdf2(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def create_access_token(
     subject: Union[str, Any], expires_delta: timedelta = None

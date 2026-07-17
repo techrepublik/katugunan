@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
-import { Loader2, Plus, Trash, ChevronRight, ChevronDown, Folder, ShieldAlert } from "lucide-react";
+import { Loader2, Plus, Trash, Edit, ChevronRight, ChevronDown, Folder, ShieldAlert } from "lucide-react";
 
 interface OrgNode {
   id: int;
@@ -18,6 +18,8 @@ export default function OrgTreePage() {
   const [tree, setTree] = useState<OrgNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [editingNodeId, setEditingNodeId] = useState<number | null>(null);
+  const [deleteConfirmNode, setDeleteConfirmNode] = useState<OrgNode | null>(null);
   
   // Form fields
   const [name, setName] = useState("");
@@ -50,17 +52,24 @@ export default function OrgTreePage() {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleAddNode = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/org-nodes`, {
-        method: "POST",
+      const isEditing = editingNodeId !== null;
+      const url = isEditing
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/org-nodes/${editingNodeId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/org-nodes`;
+      
+      const method = isEditing ? "PUT" : "POST";
+      
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: json.stringify({
+        body: JSON.stringify({
           name,
           short_name: shortName || null,
           node_type: nodeType,
@@ -72,6 +81,7 @@ export default function OrgTreePage() {
         setName("");
         setShortName("");
         setParentId(null);
+        setEditingNodeId(null);
         fetchTree();
       }
     } catch (err) {
@@ -79,15 +89,16 @@ export default function OrgTreePage() {
     }
   };
 
-  const handleDeleteNode = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this node and its relations?")) return;
+  const confirmDeleteNode = async () => {
+    if (!deleteConfirmNode) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/org-nodes/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/org-nodes/${deleteConfirmNode.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
+        setDeleteConfirmNode(null);
         fetchTree();
       }
     } catch (err) {
@@ -140,6 +151,7 @@ export default function OrgTreePage() {
                   if (node.node_type === "BRANCH") setNodeType("UNIT");
                   else if (node.node_type === "UNIT") setNodeType("DEPARTMENT");
                   else if (node.node_type === "DEPARTMENT") setNodeType("POSITION");
+                  setEditingNodeId(null);
                 }}
                 className="p-1 text-emerald-700 hover:bg-emerald-50 rounded"
                 title="Add Child Node"
@@ -148,7 +160,20 @@ export default function OrgTreePage() {
               </button>
             )}
             <button 
-              onClick={() => handleDeleteNode(node.id)}
+              onClick={() => {
+                setEditingNodeId(node.id);
+                setName(node.name);
+                setShortName(node.short_name || "");
+                setNodeType(node.node_type);
+                setParentId(node.parent_id || null);
+              }}
+              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+              title="Edit Node"
+            >
+              <Edit size={14} />
+            </button>
+            <button 
+              onClick={() => setDeleteConfirmNode(node)}
               className="p-1 text-red-600 hover:bg-red-50 rounded"
               title="Delete Node"
             >
@@ -192,9 +217,11 @@ export default function OrgTreePage() {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-fit">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Create Organizational Node</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-4">
+              {editingNodeId ? "Edit Organizational Node" : "Create Organizational Node"}
+            </h2>
             
-            <form onSubmit={handleAddNode} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Node Name</label>
                 <input 
@@ -249,12 +276,57 @@ export default function OrgTreePage() {
                 type="submit"
                 className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2 rounded-lg transition-all"
               >
-                Add Node
+                {editingNodeId ? "Save Changes" : "Add Node"}
               </button>
+
+              {editingNodeId && (
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setEditingNodeId(null);
+                    setName("");
+                    setShortName("");
+                    setParentId(null);
+                  }}
+                  className="w-full border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium py-2 rounded-lg transition-all"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
           </div>
         </main>
       </div>
+
+      {deleteConfirmNode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm transition-opacity duration-300">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl p-6 max-w-md w-full transform scale-100 transition-all duration-300">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-4">
+              <ShieldAlert size={24} />
+            </div>
+            
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Organizational Node</h3>
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              Are you sure you want to delete <span className="font-semibold text-slate-800">"{deleteConfirmNode.name}"</span>? This will permanently delete this node and recursively remove all its sub-departments, units, positions, and associated records. This action is irreversible.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmNode(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all"
+              >
+                Keep Node
+              </button>
+              <button
+                onClick={confirmDeleteNode}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-lg shadow-red-100 transition-all"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

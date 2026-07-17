@@ -67,9 +67,12 @@ async def get_org_nodes(session: AsyncSession) -> List[OrganizationNode]:
     return res.scalars().all()
 
 async def get_org_node_tree(session: AsyncSession) -> List[OrganizationNode]:
-    """Fetches root nodes and their children."""
+    """Fetches root nodes and their children recursively."""
     stmt = select(OrganizationNode).where(OrganizationNode.parent_id == None).options(
         selectinload(OrganizationNode.children)
+        .selectinload(OrganizationNode.children)
+        .selectinload(OrganizationNode.children)
+        .selectinload(OrganizationNode.children)
     )
     res = await session.execute(stmt)
     return res.scalars().all()

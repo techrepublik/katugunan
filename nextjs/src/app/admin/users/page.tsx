@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
-import { Loader2, Plus, Trash, UserPlus, FileText } from "lucide-react";
+import { Loader2, Plus, Trash, UserPlus, FileText, QrCode, Printer } from "lucide-react";
 
 interface User {
   id: number;
@@ -28,6 +28,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [nodes, setNodes] = useState<OrgNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewQrUser, setViewQrUser] = useState<User | null>(null);
 
   // Form Fields
   const [username, setUsername] = useState("");
@@ -153,7 +154,13 @@ export default function UsersPage() {
                         </td>
                         <td className="p-3">
                           {u.qrcode_payload ? (
-                            <code className="text-xs text-amber-700">{u.username}</code>
+                            <button
+                              onClick={() => setViewQrUser(u)}
+                              className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100/80 px-2 py-1 rounded font-medium transition-all"
+                            >
+                              <QrCode size={12} />
+                              <span>View QR Card</span>
+                            </button>
                           ) : (
                             <span className="text-slate-400">None</span>
                           )}
@@ -161,7 +168,7 @@ export default function UsersPage() {
                         <td className="p-3 text-right">
                           <button 
                             onClick={() => handleDeleteUser(u.id)}
-                            className="text-red-600 hover:text-red-800 font-semibold text-xs ml-2"
+                            className="text-red-600 hover:text-red-800 font-semibold text-xs ml-2 transition-colors"
                           >
                             Delete
                           </button>
@@ -275,6 +282,129 @@ export default function UsersPage() {
           </div>
         </main>
       </div>
+
+      {viewQrUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-sm transition-opacity duration-300">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl p-6 max-w-sm w-full transform scale-100 transition-all duration-300">
+            <h3 className="text-base font-bold text-slate-800 mb-4 text-center">Personnel QR Code Card</h3>
+            
+            <div id="print-qr-card" className="border border-slate-150 rounded-2xl p-6 bg-slate-50 flex flex-col items-center text-center">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 mb-1">University of Southern Mindanao</h4>
+              <p className="text-[10px] text-slate-500 mb-4">Katugunan Client Satisfaction Survey</p>
+              
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
+                <img 
+                  src={`${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "") : "http://localhost:8000"}${viewQrUser.qrcode_image_url}`} 
+                  alt={`${viewQrUser.username} QR Code`}
+                  className="w-40 h-40 object-contain"
+                />
+              </div>
+
+              <h5 className="font-bold text-slate-900 text-sm">{viewQrUser.first_name} {viewQrUser.last_name}</h5>
+              <p className="text-xs text-slate-600 font-medium">{viewQrUser.user_level} Profile</p>
+              <p className="text-[10px] text-slate-400 mt-2">Scan to evaluate this personnel</p>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setViewQrUser(null)}
+                className="flex-1 px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const popupWin = window.open("", "_blank", "width=600,height=600");
+                  popupWin?.document.open();
+                  popupWin?.document.write(`
+                    <html>
+                      <head>
+                        <title>Print QR Code Card - ${viewQrUser.first_name} ${viewQrUser.last_name}</title>
+                        <style>
+                          body {
+                            font-family: system-ui, -apple-system, sans-serif;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            height: 100vh;
+                            margin: 0;
+                            background: white;
+                          }
+                          .card {
+                            border: 3px solid #047857;
+                            border-radius: 24px;
+                            padding: 32px;
+                            text-align: center;
+                            max-width: 320px;
+                            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+                          }
+                          h4 {
+                            color: #047857;
+                            text-transform: uppercase;
+                            letter-spacing: 0.1em;
+                            margin: 0 0 4px 0;
+                            font-size: 14px;
+                          }
+                          p.sub {
+                            font-size: 11px;
+                            color: #64748b;
+                            margin: 0 0 16px 0;
+                          }
+                          .qr-box {
+                            background: #f8fafc;
+                            padding: 16px;
+                            border-radius: 16px;
+                            display: inline-block;
+                            margin-bottom: 16px;
+                            border: 1px solid #e2e8f0;
+                          }
+                          img {
+                            width: 180px;
+                            height: 180px;
+                          }
+                          h5 {
+                            font-size: 16px;
+                            margin: 0 0 4px 0;
+                            color: #0f172a;
+                          }
+                          .role {
+                            font-size: 12px;
+                            color: #475569;
+                            margin: 0;
+                            font-weight: 500;
+                          }
+                          .footer {
+                            font-size: 10px;
+                            color: #94a3b8;
+                            margin-top: 12px;
+                          }
+                        </style>
+                      </head>
+                      <body onload="window.print(); window.close();">
+                        <div class="card">
+                          <h4>University of Southern Mindanao</h4>
+                          <p class="sub">Katugunan Client Satisfaction Survey</p>
+                          <div class="qr-box">
+                            <img src="${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "") : "http://localhost:8000"}${viewQrUser.qrcode_image_url}" />
+                          </div>
+                          <h5>${viewQrUser.first_name} ${viewQrUser.last_name}</h5>
+                          <p class="role">${viewQrUser.user_level} Profile</p>
+                          <p class="footer">Scan to evaluate this personnel</p>
+                        </div>
+                      </body>
+                    </html>
+                  `);
+                  popupWin?.document.close();
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-lg shadow-emerald-100 transition-all"
+              >
+                <Printer size={12} />
+                <span>Print Card</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

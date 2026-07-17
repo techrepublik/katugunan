@@ -169,6 +169,16 @@ async def read_users(
 ) -> Any:
     return await crud.get_users(session)
 
+@router.get("/users/public/{username}", response_model=schemas.UserOut)
+async def read_user_public(
+    username: str,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_user = await crud.get_user_by_username(session, username)
+    if not db_user or not db_user.is_active:
+        raise HTTPException(status_code=404, detail="Officer profile not found")
+    return db_user
+
 @router.delete("/users/{user_id}", dependencies=[Depends(deps.allow_admin)])
 async def delete_user(
     user_id: int,
