@@ -254,13 +254,94 @@ async def get_dashboard_stats(session: AsyncSession, user: User) -> dict:
         "users": user_count,
         "services": service_count,
     }
-    
+
+    # 1. SQD Dimension Breakdown
+    sqd_breakdown = []
+    labels = [
+        "SQD0 - General Satisfaction",
+        "SQD1 - Responsiveness",
+        "SQD2 - Reliability",
+        "SQD3 - Access & Facilities",
+        "SQD4 - Communication",
+        "SQD5 - Costs",
+        "SQD6 - Integrity",
+        "SQD7 - Assurance",
+        "SQD8 - Outcome"
+    ]
+    for i in range(9):
+        field = f'sqd{i}'
+        field_vals = [getattr(s, field) for s in surveys if getattr(s, field) and getattr(s, field) > 0]
+        avg = round(sum(field_vals) / len(field_vals), 2) if field_vals else 5.0
+        pct = round((avg / 5.0) * 100, 1)
+        sqd_breakdown.append({
+            "label": labels[i],
+            "avg": avg,
+            "pct": pct
+        })
+    stats["sqd_breakdown"] = sqd_breakdown
+
+    # 2. Client Type Distribution
+    ct_counts = {}
+    for s in surveys:
+        ct = s.client_type or "Unknown"
+        ct_counts[ct] = ct_counts.get(ct, 0) + 1
+    stats["client_type_dist"] = ct_counts
+
+    # 3. Region Distribution
+    reg_counts = {}
+    for s in surveys:
+        r = s.region or "Unknown"
+        reg_counts[r] = reg_counts.get(r, 0) + 1
+    stats["region_dist"] = reg_counts
+
+    # 4. Monthly Feedback Trend
+    trend_counts = {}
+    for s in surveys:
+        if s.created_on:
+            m_name = s.created_on.strftime("%b")
+            trend_counts[m_name] = trend_counts.get(m_name, 0) + 1
+    stats["monthly_trend"] = trend_counts
+
+    # 5. Top Evaluated Services
+    service_counts = {}
+    for s in surveys:
+        txs = s.transaction_types or {}
+        if isinstance(txs, dict):
+            for svc_name in txs.values():
+                service_counts[svc_name] = service_counts.get(svc_name, 0) + 1
+    sorted_svcs = sorted(service_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    stats["top_services"] = {k: v for k, v in sorted_svcs}
+
+    # 6. Top Scored Officers / Personnel
+    officer_ratings = {}
+    officer_counts = {}
+    for s in surveys:
+        if s.evaluator_user_id:
+            valid_ratings = [getattr(s, f'sqd{i}') for i in range(9) if getattr(s, f'sqd{i}') and getattr(s, f'sqd{i}') > 0]
+            if valid_ratings:
+                avg_s = sum(valid_ratings) / len(valid_ratings)
+                officer_ratings[s.evaluator_user_id] = officer_ratings.get(s.evaluator_user_id, 0.0) + avg_s
+                officer_counts[s.evaluator_user_id] = officer_counts.get(s.evaluator_user_id, 0) + 1
+
+    top_officers_list = []
+    for user_id, total_rating in officer_ratings.items():
+        u_res = await session.execute(select(User).where(User.id == user_id))
+        db_u = u_res.scalar_one_or_none()
+        if db_u:
+            avg_score = round(total_rating / officer_counts[user_id], 2)
+            top_officers_list.append({
+                "name": f"{db_u.first_name} {db_u.last_name}",
+                "username": db_u.username,
+                "avg_rating": avg_score,
+                "surveys_count": officer_counts[user_id]
+            })
+    top_officers_list = sorted(top_officers_list, key=lambda x: (x["avg_rating"], x["surveys_count"]), reverse=True)[:5]
+    stats["top_officers"] = top_officers_list
+
     if user.user_level in [UserLevel.SUPER, UserLevel.ADMIN]:
-        # Count Units (node_type = UNIT)
         unit_count_stmt = select(func.count(OrganizationNode.id)).where(OrganizationNode.node_type == NodeType.UNIT)
         stats["units"] = (await session.execute(unit_count_stmt)).scalar() or 0
         
-        # Count Departments (node_type = DEPARTMENT)
         dept_count_stmt = select(func.count(OrganizationNode.id)).where(OrganizationNode.node_type == NodeType.DEPARTMENT)
         stats["departments"] = (await session.execute(dept_count_stmt)).scalar() or 0
         
