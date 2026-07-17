@@ -38,6 +38,11 @@ class OrganizationNode(SQLModel, table=True):
     # JSONB field to store flexible configuration parameters
     metadata_info: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSONB))
 
+import uuid as uuid_pkg
+
+def generate_uuid_str() -> str:
+    return str(uuid_pkg.uuid4())
+
 class User(SQLModel, table=True):
     __tablename__ = "users"
     
@@ -45,6 +50,7 @@ class User(SQLModel, table=True):
     username: str = Field(unique=True, index=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
+    uuid: str = Field(default_factory=generate_uuid_str, unique=True, index=True)
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None

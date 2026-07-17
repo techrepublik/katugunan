@@ -45,6 +45,7 @@ class UserUpdate(BaseModel):
 
 class UserOut(UserBase):
     id: int
+    uuid: str
     picture_url: Optional[str] = None
     qrcode_image_url: Optional[str] = None
     qrcode_payload: Optional[str] = None

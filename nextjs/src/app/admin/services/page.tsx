@@ -25,6 +25,7 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [nodes, setNodes] = useState<OrgNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
 
   // Form Fields
   const [serviceName, setServiceName] = useState("");
@@ -55,12 +56,18 @@ export default function ServicesPage() {
     fetchServicesAndNodes();
   }, []);
 
-  const handleAddService = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/services`, {
-        method: "POST",
+      const isEditing = editingServiceId !== null;
+      const url = isEditing
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/services/${editingServiceId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/services`;
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
@@ -81,6 +88,23 @@ export default function ServicesPage() {
         setServiceTime("");
         setServiceIsPayment(false);
         setOrgNodeId(null);
+        setEditingServiceId(null);
+        fetchServicesAndNodes();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteService = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this service?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/services/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
         fetchServicesAndNodes();
       }
     } catch (err) {
@@ -112,6 +136,7 @@ export default function ServicesPage() {
                       <th className="p-3 font-semibold text-slate-700">Service Type</th>
                       <th className="p-3 font-semibold text-slate-700">Service Time</th>
                       <th className="p-3 font-semibold text-slate-700">Requires Payment</th>
+                      <th className="p-3 font-semibold text-slate-700 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -128,6 +153,28 @@ export default function ServicesPage() {
                             {s.service_is_payment ? "Yes" : "No"}
                           </span>
                         </td>
+                        <td className="p-3 text-right space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingServiceId(s.id);
+                              setServiceName(s.service_name);
+                              setServiceNo(s.service_no);
+                              setServiceType(s.service_type);
+                              setServiceTime(s.service_time || "");
+                              setServiceIsPayment(s.service_is_payment);
+                              setOrgNodeId(s.org_node_id || null);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 font-semibold text-xs transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteService(s.id)}
+                            className="text-red-600 hover:text-red-800 font-semibold text-xs transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -137,9 +184,11 @@ export default function ServicesPage() {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-fit">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Add Offered Service</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-4">
+              {editingServiceId ? "Edit Offered Service" : "Add Offered Service"}
+            </h2>
             
-            <form onSubmit={handleAddService} className="space-y-4">
+            <form onSubmit={handleFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Service Name</label>
                 <input 
@@ -218,8 +267,25 @@ export default function ServicesPage() {
                 type="submit"
                 className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2 rounded-lg transition-all"
               >
-                Add Service
+                {editingServiceId ? "Save Changes" : "Add Service"}
               </button>
+
+              {editingServiceId && (
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setServiceName("");
+                    setServiceNo(0);
+                    setServiceTime("");
+                    setServiceIsPayment(false);
+                    setOrgNodeId(null);
+                    setEditingServiceId(null);
+                  }}
+                  className="w-full border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium py-2 rounded-lg transition-all mt-2"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
           </div>
         </main>

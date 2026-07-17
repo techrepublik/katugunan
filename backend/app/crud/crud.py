@@ -84,8 +84,10 @@ async def create_user(session: AsyncSession, user_in: UserCreate) -> User:
     
     db_user = User(**user_data, hashed_password=hashed_pwd)
     
-    # Auto-generate QR code payload
-    qrcode_payload = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/survey/{user_in.username}"
+    # Auto-generate QR code payload using UUID
+    import uuid
+    db_user.uuid = str(uuid.uuid4())
+    qrcode_payload = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/survey/{db_user.uuid}"
     db_user.qrcode_payload = qrcode_payload
     db_user.qrcode_image_url = f"/media/qrcodes/{user_in.username}.png"
     
@@ -96,6 +98,11 @@ async def create_user(session: AsyncSession, user_in: UserCreate) -> User:
 
 async def get_user(session: AsyncSession, user_id: int) -> Optional[User]:
     stmt = select(User).where(User.id == user_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+async def get_user_by_uuid(session: AsyncSession, user_uuid: str) -> Optional[User]:
+    stmt = select(User).where(User.uuid == user_uuid)
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
@@ -126,6 +133,11 @@ async def get_services(session: AsyncSession) -> List[Service]:
     stmt = select(Service)
     res = await session.execute(stmt)
     return res.scalars().all()
+
+async def get_service(session: AsyncSession, service_id: int) -> Optional[Service]:
+    stmt = select(Service).where(Service.id == service_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
 
 # Question CRUD
 async def create_question(session: AsyncSession, question_in: QuestionCreate) -> Question:

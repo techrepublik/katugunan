@@ -126,6 +126,40 @@ async def read_services(
 ) -> Any:
     return await crud.get_services(session)
 
+@router.put("/services/{service_id}", response_model=schemas.ServiceOut, dependencies=[Depends(deps.allow_admin)])
+async def update_service_route(
+    service_id: int,
+    service_in: schemas.ServiceCreate,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_service = await crud.get_service(session, service_id)
+    if not db_service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    db_service.service_name = service_in.service_name
+    db_service.service_no = service_in.service_no
+    db_service.service_type = service_in.service_type
+    db_service.service_time = service_in.service_time
+    db_service.service_is_payment = service_in.service_is_payment
+    db_service.org_node_id = service_in.org_node_id
+    
+    session.add(db_service)
+    await session.commit()
+    await session.refresh(db_service)
+    return db_service
+
+@router.delete("/services/{service_id}", dependencies=[Depends(deps.allow_admin)])
+async def delete_service_route(
+    service_id: int,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_service = await crud.get_service(session, service_id)
+    if not db_service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    await session.delete(db_service)
+    await session.commit()
+    return {"success": True}
+
 # Questions Endpoints
 @router.post("/questions", response_model=schemas.QuestionOut, dependencies=[Depends(deps.allow_admin)])
 async def create_question_route(
@@ -152,8 +186,8 @@ async def create_user_route(
         
     db_user = await crud.create_user(session, user_in)
     
-    # Generate QR code
-    payload = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/survey/{db_user.username}"
+    # Generate QR code using UUID
+    payload = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/survey/{db_user.uuid}"
     qr_url = generate_qr_code_file(db_user.username, payload)
     
     db_user.qrcode_payload = payload
@@ -169,12 +203,17 @@ async def read_users(
 ) -> Any:
     return await crud.get_users(session)
 
-@router.get("/users/public/{username}", response_model=schemas.UserOut)
+@router.get("/users/public/{identifier}", response_model=schemas.UserOut)
 async def read_user_public(
-    username: str,
+    identifier: str,
     session: AsyncSession = Depends(get_session)
 ) -> Any:
-    db_user = await crud.get_user_by_username(session, username)
+    # First try resolving by UUID
+    db_user = await crud.get_user_by_uuid(session, identifier)
+    if not db_user:
+        # Fallback to username for compatibility with existing QR codes
+        db_user = await crud.get_user_by_username(session, identifier)
+        
     if not db_user or not db_user.is_active:
         raise HTTPException(status_code=404, detail="Officer profile not found")
     return db_user

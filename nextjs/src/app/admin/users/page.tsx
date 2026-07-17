@@ -27,6 +27,7 @@ interface OrgNode {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [nodes, setNodes] = useState<OrgNode[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewQrUser, setViewQrUser] = useState<User | null>(null);
 
@@ -46,9 +47,11 @@ export default function UsersPage() {
 
       const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/users`, { headers });
       const nodesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/org-nodes`, { headers });
+      const servicesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/services`, { headers });
 
       if (usersRes.ok) setUsers(await usersRes.json());
       if (nodesRes.ok) setNodes(await nodesRes.json());
+      if (servicesRes.ok) setServices(await servicesRes.json());
     } catch (err) {
       console.error(err);
     } finally {
@@ -134,47 +137,75 @@ export default function UsersPage() {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
                       <th className="p-3 font-semibold text-slate-700">Username</th>
+                      <th className="p-3 font-semibold text-slate-700">Full Name / Role</th>
                       <th className="p-3 font-semibold text-slate-700">Email</th>
-                      <th className="p-3 font-semibold text-slate-700">Full Name</th>
-                      <th className="p-3 font-semibold text-slate-700">Role</th>
+                      <th className="p-3 font-semibold text-slate-700">Department / Office</th>
+                      <th className="p-3 font-semibold text-slate-700">Services Offered</th>
                       <th className="p-3 font-semibold text-slate-700">QR Payload</th>
                       <th className="p-3 font-semibold text-slate-700 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {users.map(u => (
-                      <tr key={u.id} className="hover:bg-slate-50/50">
-                        <td className="p-3 font-medium text-slate-900">{u.username}</td>
-                        <td className="p-3 text-slate-600">{u.email}</td>
-                        <td className="p-3 text-slate-700">{u.first_name} {u.last_name}</td>
-                        <td className="p-3">
-                          <span className="bg-slate-100 text-slate-800 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded">
-                            {u.user_level}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          {u.qrcode_payload ? (
-                            <button
-                              onClick={() => setViewQrUser(u)}
-                              className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100/80 px-2 py-1 rounded font-medium transition-all"
+                    {users.map(u => {
+                      const userNode = nodes.find(n => n.id === u.org_node_id);
+                      const userServices = services.filter(s => s.org_node_id === u.org_node_id);
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/50">
+                          <td className="p-3 font-medium text-slate-900">{u.username}</td>
+                          <td className="p-3">
+                            <div className="font-semibold text-slate-800">{u.first_name} {u.last_name}</div>
+                            <span className="inline-block mt-0.5 bg-slate-100 text-slate-800 text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded">
+                              {u.user_level}
+                            </span>
+                          </td>
+                          <td className="p-3 text-slate-600 text-xs">{u.email}</td>
+                          <td className="p-3 text-xs">
+                            {userNode ? (
+                              <div>
+                                <span className="font-semibold text-slate-700">{userNode.name}</span>
+                                <span className="block text-[9px] text-slate-400 uppercase tracking-wider">{userNode.node_type}</span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">Not Assigned</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-xs">
+                            {userServices.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                {userServices.map(s => (
+                                  <span key={s.id} className="inline-block text-[9px] bg-emerald-50 text-emerald-800 font-semibold px-2 py-0.5 rounded border border-emerald-100">
+                                    {s.service_name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">No Services</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {u.qrcode_payload ? (
+                              <button
+                                onClick={() => setViewQrUser(u)}
+                                className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100/80 px-2 py-1 rounded font-medium transition-all"
+                              >
+                                <QrCode size={12} />
+                                <span>View QR Card</span>
+                              </button>
+                            ) : (
+                              <span className="text-slate-400">None</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right">
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="text-red-600 hover:text-red-800 font-semibold text-xs ml-2 transition-colors"
                             >
-                              <QrCode size={12} />
-                              <span>View QR Card</span>
+                              Delete
                             </button>
-                          ) : (
-                            <span className="text-slate-400">None</span>
-                          )}
-                        </td>
-                        <td className="p-3 text-right">
-                          <button 
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="text-red-600 hover:text-red-800 font-semibold text-xs ml-2 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
