@@ -36,6 +36,8 @@ export default function PublicSurveyPage({ params }: { params: { username: strin
   const [evaluator, setEvaluator] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientTypes, setClientTypes] = useState<string[]>(["Student", "Faculty", "Staff", "Alumni", "Visitor"]);
+  const [regions, setRegions] = useState<string[]>(["Region XII", "NCR", "BARMM"]);
 
   // Form responses
   const [clientType, setClientType] = useState("Student");
@@ -76,6 +78,24 @@ export default function PublicSurveyPage({ params }: { params: { username: strin
             // Filter services offered by target user's org node
             const userServices = allServices.filter((s: any) => s.org_node_id === target.org_node_id);
             setServices(userServices);
+          }
+
+          // Get survey metadata
+          try {
+            const metaRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/survey-metadata`);
+            if (metaRes.ok) {
+              const meta = await metaRes.json();
+              if (meta.client_types) {
+                setClientTypes(meta.client_types);
+                setClientType(meta.client_types[0] || "Student");
+              }
+              if (meta.regions) {
+                setRegions(meta.regions);
+                setRegion(meta.regions[0] || "Region XII");
+              }
+            }
+          } catch (metaErr) {
+            console.error("Failed to load survey metadata, using static fallback:", metaErr);
           }
         }
       } catch (err) {
@@ -178,31 +198,41 @@ export default function PublicSurveyPage({ params }: { params: { username: strin
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Client Type</label>
               <select value={clientType} onChange={(e) => setClientType(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none">
-                <option value="Student">Student</option>
-                <option value="Faculty">Faculty</option>
-                <option value="Staff">Staff</option>
-                <option value="Alumni">Alumni</option>
-                <option value="Visitor">Visitor</option>
+                {clientTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Region</label>
               <select value={region} onChange={(e) => setRegion(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none">
-                <option value="Region XII">Region XII</option>
-                <option value="NCR">NCR</option>
-                <option value="BARMM">BARMM</option>
+                {regions.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Sex</label>
-              <select value={sex} onChange={(e) => setSex(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none">
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
+              <label className="block text-[10px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Sex</label>
+              <div className="flex gap-1.5 max-w-[200px]">
+                {["Male", "Female"].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSex(s)}
+                    className={`flex-1 py-1.5 px-3 rounded-lg border text-xs font-semibold transition-all duration-200 ${
+                      sex === s
+                        ? "bg-emerald-700 border-emerald-700 text-white shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -463,8 +493,19 @@ export default function PublicSurveyPage({ params }: { params: { username: strin
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Suggestions / Remarks</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Suggestions / Remarks (Optional)</label>
             <textarea value={suggestions} onChange={(e) => setSuggestions(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none h-20" placeholder="Please write any remarks or recommendations..." />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase">Email Address (Optional)</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none" 
+              placeholder="e.g. client@example.com" 
+            />
           </div>
 
           <button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md">

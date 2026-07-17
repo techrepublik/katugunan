@@ -25,6 +25,7 @@ export default function Sidebar({ userLevel }: SidebarProps) {
     { name: "Service Catalog", href: "/admin/services", icon: Settings, roles: ["Super", "Admin"] },
     { name: "Survey Questions", href: "/admin/questions", icon: HelpCircle, roles: ["Super", "Admin"] },
     { name: "User Management", href: "/admin/users", icon: Users, roles: ["Super", "Admin"] },
+    { name: "Survey Dropdowns", href: "/admin/metadata", icon: BookOpen, roles: ["Super", "Admin"] },
   ];
 
   const handleLogout = () => {

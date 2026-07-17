@@ -51,6 +51,23 @@ async def on_startup():
                 session.add(u)
             await session.commit()
 
+    # Seed default Client Types & Regions if empty
+    from app.models.models import ClientType, Region
+    async with AsyncSession(engine) as session:
+        ct_res = await session.exec(select(ClientType))
+        if not ct_res.first():
+            default_cts = ["Student", "Faculty", "Staff", "Alumni", "Visitor"]
+            for ct_name in default_cts:
+                session.add(ClientType(name=ct_name))
+        
+        r_res = await session.exec(select(Region))
+        if not r_res.first():
+            default_regions = ["Region XII", "NCR", "BARMM"]
+            for r_name in default_regions:
+                session.add(Region(name=r_name))
+                
+        await session.commit()
+
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")

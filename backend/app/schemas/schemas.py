@@ -198,3 +198,22 @@ class DashboardStats(BaseModel):
     services: int
     units: Optional[int] = None
     departments: Optional[int] = None
+
+# Metadata Schemas
+class ClientTypeCreate(BaseModel):
+    name: str
+
+class ClientTypeOut(BaseModel):
+    id: int
+    name: str
+    class Config:
+        from_attributes = True
+
+class RegionCreate(BaseModel):
+    name: str
+
+class RegionOut(BaseModel):
+    id: int
+    name: str
+    class Config:
+        from_attributes = True

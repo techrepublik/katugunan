@@ -11,7 +11,7 @@ from app.core.db import get_session
 from app.core.security import create_access_token, verify_password, get_password_hash
 from app.api import deps
 from app.crud import crud
-from app.models.models import User, UserLevel, NodeType, OrganizationNode
+from app.models.models import User, UserLevel, NodeType, OrganizationNode, ClientType, Region
 from app.schemas import schemas
 
 router = APIRouter()
@@ -235,6 +235,115 @@ async def delete_user(
     await session.delete(db_user)
     await session.commit()
     return {"success": True}
+
+@router.get("/survey-metadata")
+async def get_survey_metadata(
+    session: AsyncSession = Depends(get_session)
+):
+    client_types = await crud.get_client_types(session)
+    regions = await crud.get_regions(session)
+    return {
+        "client_types": [ct.name for ct in client_types],
+        "regions": [r.name for r in regions]
+    }
+
+# Client Type Endpoints
+@router.get("/client-types", response_model=List[schemas.ClientTypeOut], dependencies=[Depends(deps.allow_admin)])
+async def read_client_types(
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    return await crud.get_client_types(session)
+
+@router.post("/client-types", response_model=schemas.ClientTypeOut, dependencies=[Depends(deps.allow_admin)])
+async def create_client_type_route(
+    ct_in: schemas.ClientTypeCreate,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    from sqlmodel import select
+    res = await session.execute(select(ClientType).where(ClientType.name == ct_in.name))
+    if res.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Client type already exists")
+    return await crud.create_client_type(session, ct_in)
+
+@router.delete("/client-types/{ct_id}", dependencies=[Depends(deps.allow_admin)])
+async def delete_client_type_route(
+    ct_id: int,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_ct = await crud.get_client_type(session, ct_id)
+    if not db_ct:
+        raise HTTPException(status_code=404, detail="Client type not found")
+    await session.delete(db_ct)
+    await session.commit()
+    return {"success": True}
+
+@router.put("/client-types/{ct_id}", response_model=schemas.ClientTypeOut, dependencies=[Depends(deps.allow_admin)])
+async def update_client_type_route(
+    ct_id: int,
+    ct_in: schemas.ClientTypeCreate,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_ct = await crud.get_client_type(session, ct_id)
+    if not db_ct:
+        raise HTTPException(status_code=404, detail="Client type not found")
+    from sqlmodel import select
+    res = await session.execute(select(ClientType).where(ClientType.name == ct_in.name, ClientType.id != ct_id))
+    if res.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Client type with this name already exists")
+    db_ct.name = ct_in.name
+    session.add(db_ct)
+    await session.commit()
+    await session.refresh(db_ct)
+    return db_ct
+
+# Region Endpoints
+@router.get("/regions", response_model=List[schemas.RegionOut], dependencies=[Depends(deps.allow_admin)])
+async def read_regions(
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    return await crud.get_regions(session)
+
+@router.post("/regions", response_model=schemas.RegionOut, dependencies=[Depends(deps.allow_admin)])
+async def create_region_route(
+    r_in: schemas.RegionCreate,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    from sqlmodel import select
+    res = await session.execute(select(Region).where(Region.name == r_in.name))
+    if res.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Region already exists")
+    return await crud.create_region(session, r_in)
+
+@router.delete("/regions/{r_id}", dependencies=[Depends(deps.allow_admin)])
+async def delete_region_route(
+    r_id: int,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_r = await crud.get_region(session, r_id)
+    if not db_r:
+        raise HTTPException(status_code=404, detail="Region not found")
+    await session.delete(db_r)
+    await session.commit()
+    return {"success": True}
+
+@router.put("/regions/{r_id}", response_model=schemas.RegionOut, dependencies=[Depends(deps.allow_admin)])
+async def update_region_route(
+    r_id: int,
+    r_in: schemas.RegionCreate,
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    db_r = await crud.get_region(session, r_id)
+    if not db_r:
+        raise HTTPException(status_code=404, detail="Region not found")
+    from sqlmodel import select
+    res = await session.execute(select(Region).where(Region.name == r_in.name, Region.id != r_id))
+    if res.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Region with this name already exists")
+    db_r.name = r_in.name
+    session.add(db_r)
+    await session.commit()
+    await session.refresh(db_r)
+    return db_r
 
 # Surveys Endpoints
 @router.post("/surveys", response_model=schemas.SurveyOut)

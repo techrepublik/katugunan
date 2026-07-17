@@ -131,3 +131,15 @@ class ClientSurvey(SQLModel, table=True):
     sqd8: Optional[int] = None
     
     created_on: datetime = Field(default_factory=datetime.utcnow)
+
+class ClientType(SQLModel, table=True):
+    __tablename__ = "client_types"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True, index=True)
+
+class Region(SQLModel, table=True):
+    __tablename__ = "regions"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True, index=True)

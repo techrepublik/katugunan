@@ -5,8 +5,8 @@ from sqlmodel import select, and_, or_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.models import OrganizationNode, User, Service, Question, ClientSurvey, SurveyServiceLink, NodeType, UserLevel
-from app.schemas.schemas import UserCreate, OrgNodeCreate, ServiceCreate, QuestionCreate, SurveyCreate
+from app.models.models import OrganizationNode, User, Service, Question, ClientSurvey, SurveyServiceLink, NodeType, UserLevel, ClientType, Region
+from app.schemas.schemas import UserCreate, OrgNodeCreate, ServiceCreate, QuestionCreate, SurveyCreate, ClientTypeCreate, RegionCreate
 from app.core.security import get_password_hash
 from app.core.config import settings
 
@@ -260,3 +260,39 @@ async def get_dashboard_stats(session: AsyncSession, user: User) -> dict:
         stats["departments"] = (await session.execute(dept_count_stmt)).scalar() or 0
         
     return stats
+
+# ClientType CRUD
+async def get_client_types(session: AsyncSession) -> List[ClientType]:
+    stmt = select(ClientType).order_by(ClientType.name)
+    res = await session.execute(stmt)
+    return res.scalars().all()
+
+async def get_client_type(session: AsyncSession, ct_id: int) -> Optional[ClientType]:
+    stmt = select(ClientType).where(ClientType.id == ct_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+async def create_client_type(session: AsyncSession, ct_in: ClientTypeCreate) -> ClientType:
+    db_ct = ClientType.model_validate(ct_in)
+    session.add(db_ct)
+    await session.commit()
+    await session.refresh(db_ct)
+    return db_ct
+
+# Region CRUD
+async def get_regions(session: AsyncSession) -> List[Region]:
+    stmt = select(Region).order_by(Region.name)
+    res = await session.execute(stmt)
+    return res.scalars().all()
+
+async def get_region(session: AsyncSession, r_id: int) -> Optional[Region]:
+    stmt = select(Region).where(Region.id == r_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+async def create_region(session: AsyncSession, r_in: RegionCreate) -> Region:
+    db_r = Region.model_validate(r_in)
+    session.add(db_r)
+    await session.commit()
+    await session.refresh(db_r)
+    return db_r
