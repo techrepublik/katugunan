@@ -81,6 +81,10 @@ interface PersonnelStats {
       label: string;
       average: number;
     }>;
+    service_stats: Array<{
+      service_name: string;
+      count: number;
+    }>;
   };
   timeline: TimelineItem[];
   sentiment_feed: SentimentFeedItem[];
@@ -598,21 +602,62 @@ export default function PersonnelMonitorPage() {
 
               </div>
 
-              {/* Bottom row: SQD Dimensions Bar Chart & Sentiment Feed logs */}
+              {/* Bottom row: SQD Dimensions Bar Chart, Service Volume Tally, and Sentiment Feed logs */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* SQD averages bar chart */}
-                <div className="lg:col-span-2 bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col">
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col">
                   <div className="border-b border-slate-100 pb-3 mb-4">
                     <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                       <Sparkles size={16} className="text-amber-500" />
                       <span>SQD Dimensions Breakdown</span>
                     </h3>
-                    <p className="text-[10px] text-slate-400">Average score comparisons across the 9 citizen quality guidelines</p>
+                    <p className="text-[10px] text-slate-400">Average score comparisons across guidelines</p>
                   </div>
 
                   <div className="flex-1 min-h-[250px] h-[250px]">
                     <Bar data={buildSQDChartData()} options={sqdChartOptions} />
+                  </div>
+                </div>
+
+                {/* Service Volume Performance Tally */}
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col">
+                  <div className="border-b border-slate-100 pb-3 mb-4">
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                      <Users size={16} className="text-emerald-700" />
+                      <span>Service Performance Tally</span>
+                    </h3>
+                    <p className="text-[10px] text-slate-400">Tally of survey submissions per service type</p>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-3 max-h-[250px] pr-1 scrollbar-thin scrollbar-thumb-slate-250">
+                    {stats.summary.service_stats && stats.summary.service_stats.length > 0 ? (
+                      stats.summary.service_stats.map((svc, sIdx) => {
+                        const pct = stats.summary.total_surveys > 0
+                          ? ((svc.count / stats.summary.total_surveys) * 100).toFixed(0)
+                          : "0";
+                        return (
+                          <div key={sIdx} className="space-y-1">
+                            <div className="flex justify-between text-[10px] font-bold text-slate-700">
+                              <span className="truncate max-w-[190px]">{svc.service_name}</span>
+                              <span className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-100 font-extrabold">
+                                {svc.count} ({pct}%)
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <div 
+                                className="bg-emerald-600 h-1.5 transition-all duration-550" 
+                                style={{ width: `${pct}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-400 py-10 text-xs">
+                        No service transaction tallies.
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -623,7 +668,7 @@ export default function PersonnelMonitorPage() {
                       <MessageSquare size={16} className="text-emerald-700" />
                       <span>Sentiment Audited Feed</span>
                     </h3>
-                    <p className="text-[10px] text-slate-400">Recent customer comments with sentiment classifications</p>
+                    <p className="text-[10px] text-slate-400">Recent customer comments with sentiment</p>
                   </div>
 
                   <div className="flex-1 overflow-y-auto space-y-3 max-h-[250px] pr-1 scrollbar-thin scrollbar-thumb-slate-250">

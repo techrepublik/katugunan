@@ -1298,6 +1298,19 @@ async def get_personnel_stats(
             "average": avg_val
         })
 
+    # Tally survey counts per transaction service
+    service_counts = collections.Counter()
+    for s in surveys:
+        txs = s.transaction_types or {}
+        if isinstance(txs, dict):
+            for name in txs.values():
+                service_counts[name] += 1
+                
+    service_stats = [
+        {"service_name": name, "count": count}
+        for name, count in service_counts.most_common()
+    ]
+
     return {
         "scope_type": scope_type,
         "target_id": target_id,
@@ -1316,7 +1329,8 @@ async def get_personnel_stats(
                 "trend_pct": trend_pct,
                 "message": prediction_msg
             },
-            "sqd_averages": sqd_averages
+            "sqd_averages": sqd_averages,
+            "service_stats": service_stats
         },
         "timeline": timeline,
         "sentiment_feed": sentiment_feed[:20]
