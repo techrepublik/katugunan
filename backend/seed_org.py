@@ -39,9 +39,10 @@ async def seed():
         )
         session.add(main_campus)
         session.add(kcc_campus)
-        await session.commit()
-        await session.refresh(main_campus)
-        await session.refresh(kcc_campus)
+        
+        await session.flush()
+        main_campus_id = main_campus.id
+        kcc_campus_id = kcc_campus.id
 
         # 3. Seed Colleges (UNIT) under Main Campus
         print("Seeding colleges/units...")
@@ -49,39 +50,40 @@ async def seed():
             name="College of Computing and Information Sciences",
             short_name="CCIS",
             node_type=NodeType.UNIT,
-            parent_id=main_campus.id,
+            parent_id=main_campus_id,
             metadata_info={"unit_type": "Academic"}
         )
         ca = OrganizationNode(
             name="College of Agriculture",
             short_name="CA",
             node_type=NodeType.UNIT,
-            parent_id=main_campus.id,
+            parent_id=main_campus_id,
             metadata_info={"unit_type": "Academic"}
         )
         ceit = OrganizationNode(
             name="College of Engineering and Information Technology",
             short_name="CEIT",
             node_type=NodeType.UNIT,
-            parent_id=main_campus.id,
+            parent_id=main_campus_id,
             metadata_info={"unit_type": "Academic"}
         )
         cbdem = OrganizationNode(
             name="College of Business, Development Economics and Management",
             short_name="CBDEM",
             node_type=NodeType.UNIT,
-            parent_id=main_campus.id,
+            parent_id=main_campus_id,
             metadata_info={"unit_type": "Academic"}
         )
         session.add(ccis)
         session.add(ca)
         session.add(ceit)
         session.add(cbdem)
-        await session.commit()
-        await session.refresh(ccis)
-        await session.refresh(ca)
-        await session.refresh(ceit)
-        await session.refresh(cbdem)
+        
+        await session.flush()
+        ccis_id = ccis.id
+        ca_id = ca.id
+        ceit_id = ceit.id
+        cbdem_id = cbdem.id
 
         # 4. Seed Departments (DEPARTMENT) under Colleges
         print("Seeding departments...")
@@ -90,39 +92,39 @@ async def seed():
             name="Department of Computer Science",
             short_name="DCS",
             node_type=NodeType.DEPARTMENT,
-            parent_id=ccis.id
+            parent_id=ccis_id
         )
         it_dept = OrganizationNode(
             name="Department of Information Technology",
             short_name="DIT",
             node_type=NodeType.DEPARTMENT,
-            parent_id=ccis.id
+            parent_id=ccis_id
         )
         # Under CA
         agronomy_dept = OrganizationNode(
             name="Department of Agronomy",
             short_name="Agronomy",
             node_type=NodeType.DEPARTMENT,
-            parent_id=ca.id
+            parent_id=ca_id
         )
         animal_science_dept = OrganizationNode(
             name="Department of Animal Science",
             short_name="AnimalSci",
             node_type=NodeType.DEPARTMENT,
-            parent_id=ca.id
+            parent_id=ca_id
         )
         # Under CEIT
         civil_dept = OrganizationNode(
             name="Department of Civil Engineering",
             short_name="CivilEng",
             node_type=NodeType.DEPARTMENT,
-            parent_id=ceit.id
+            parent_id=ceit_id
         )
         agri_eng_dept = OrganizationNode(
             name="Department of Agricultural and Biosystems Engineering",
             short_name="AgriEng",
             node_type=NodeType.DEPARTMENT,
-            parent_id=ceit.id
+            parent_id=ceit_id
         )
 
         session.add(cs_dept)
@@ -131,13 +133,14 @@ async def seed():
         session.add(animal_science_dept)
         session.add(civil_dept)
         session.add(agri_eng_dept)
-        await session.commit()
-        await session.refresh(cs_dept)
-        await session.refresh(it_dept)
-        await session.refresh(agronomy_dept)
-        await session.refresh(animal_science_dept)
-        await session.refresh(civil_dept)
-        await session.refresh(agri_eng_dept)
+        
+        await session.flush()
+        cs_dept_id = cs_dept.id
+        it_dept_id = it_dept.id
+        agronomy_dept_id = agronomy_dept.id
+        animal_science_dept_id = animal_science_dept.id
+        civil_dept_id = civil_dept.id
+        agri_eng_dept_id = agri_eng_dept.id
 
         # 5. Seed Positions (POSITION) under Departments
         print("Seeding positions...")
@@ -146,14 +149,14 @@ async def seed():
             name="DCS Department Chairperson",
             short_name="DCS-Head",
             node_type=NodeType.POSITION,
-            parent_id=cs_dept.id,
+            parent_id=cs_dept_id,
             metadata_info={"position_status": "Active"}
         )
         dcs_instructor = OrganizationNode(
             name="Computer Science Instructor",
             short_name="DCS-Inst",
             node_type=NodeType.POSITION,
-            parent_id=cs_dept.id,
+            parent_id=cs_dept_id,
             metadata_info={"position_status": "Active"}
         )
         # Under DIT
@@ -161,14 +164,14 @@ async def seed():
             name="DIT Department Chairperson",
             short_name="DIT-Head",
             node_type=NodeType.POSITION,
-            parent_id=it_dept.id,
+            parent_id=it_dept_id,
             metadata_info={"position_status": "Active"}
         )
         dit_instructor = OrganizationNode(
             name="Information Technology Instructor",
             short_name="DIT-Inst",
             node_type=NodeType.POSITION,
-            parent_id=it_dept.id,
+            parent_id=it_dept_id,
             metadata_info={"position_status": "Active"}
         )
 
@@ -176,17 +179,18 @@ async def seed():
         session.add(dcs_instructor)
         session.add(dit_head)
         session.add(dit_instructor)
-        await session.commit()
-        await session.refresh(dcs_head)
-        await session.refresh(dcs_instructor)
-        await session.refresh(dit_head)
-        await session.refresh(dit_instructor)
+        
+        await session.flush()
+        dcs_head_id = dcs_head.id
+        dcs_instructor_id = dcs_instructor.id
+        dit_head_id = dit_head.id
+        dit_instructor_id = dit_instructor.id
 
         # 6. Seed Service Catalog under Positions
         print("Seeding services...")
         # DCS Head Services
         session.add(Service(
-            org_node_id=dcs_head.id,
+            org_node_id=dcs_head_id,
             service_name="Evaluation and Credit Mapping of Transfer Credentials",
             service_no=101,
             service_type="External",
@@ -194,7 +198,7 @@ async def seed():
             service_is_payment=False
         ))
         session.add(Service(
-            org_node_id=dcs_head.id,
+            org_node_id=dcs_head_id,
             service_name="CS Thesis Topic Presentation & Committee Assignment",
             service_no=102,
             service_type="Internal",
@@ -203,7 +207,7 @@ async def seed():
         ))
         # DIT Head Services
         session.add(Service(
-            org_node_id=dit_head.id,
+            org_node_id=dit_head_id,
             service_name="IT Laboratory Reservation & Facilities Request",
             service_no=201,
             service_type="Internal",
@@ -211,7 +215,7 @@ async def seed():
             service_is_payment=False
         ))
         session.add(Service(
-            org_node_id=dit_head.id,
+            org_node_id=dit_head_id,
             service_name="IT Capstone Project Proposal Review",
             service_no=202,
             service_type="External",
@@ -220,7 +224,7 @@ async def seed():
         ))
         # Instructor Services
         session.add(Service(
-            org_node_id=dcs_instructor.id,
+            org_node_id=dcs_instructor_id,
             service_name="Student Academic Advising & Consultation",
             service_no=301,
             service_type="Internal",
@@ -228,14 +232,13 @@ async def seed():
             service_is_payment=False
         ))
         session.add(Service(
-            org_node_id=dit_instructor.id,
+            org_node_id=dit_instructor_id,
             service_name="Student Technical Consultation & Project Mentoring",
             service_no=302,
             service_type="Internal",
             service_time="15 minutes",
             service_is_payment=False
         ))
-        await session.commit()
 
         # 7. Update existing test users to associate them with the new seeded nodes
         print("Re-linking test users to seeded organization hierarchy...")
@@ -244,16 +247,16 @@ async def seed():
         users = res.scalars().all()
         for u in users:
             if u.user_level == "Super" or u.user_level == "Admin":
-                u.org_node_id = main_campus.id # Admin/Super at Main Campus
+                u.org_node_id = main_campus_id
             elif u.user_level == "Unit":
                 # Give Unit users CCIS or DCS-Head position
                 if u.username == "josh04" or u.username == "testoperator":
-                    u.org_node_id = dcs_head.id
+                    u.org_node_id = dcs_head_id
                 else:
-                    u.org_node_id = ccis.id
+                    u.org_node_id = ccis_id
             session.add(u)
+            
         await session.commit()
-
         print("=== ORGANIZATIONAL HIERARCHY SEEDED SUCCESSFULLY ===")
 
 if __name__ == "__main__":

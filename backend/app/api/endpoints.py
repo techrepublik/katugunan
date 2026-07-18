@@ -1083,3 +1083,242 @@ async def export_surveys_csv(
     response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=survey_responses.csv"
     return response
+
+
+@router.get("/surveys/personnel-stats", dependencies=[Depends(deps.allow_dashboard)])
+async def get_personnel_stats(
+    scope_type: str = "all",
+    target_id: Optional[int] = None,
+    time_group: str = "monthly",
+    current_user: User = Depends(deps.get_current_user),
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    # 1. Resolve evaluator IDs based on scope and target node
+    evaluator_ids = []
+    
+    # Simple recursive descendant ID fetcher
+    async def get_descendant_ids(node_id: int) -> List[int]:
+        descendants = [node_id]
+        to_check = [node_id]
+        for _ in range(8):
+            if not to_check:
+                break
+            q = select(OrganizationNode.id).where(OrganizationNode.parent_id.in_(to_check))
+            res = await session.execute(q)
+            children = res.scalars().all()
+            if not children:
+                break
+            descendants.extend(children)
+            to_check = list(children)
+        return descendants
+
+    if scope_type == "individual":
+        if target_id is not None:
+            evaluator_ids = [target_id]
+    elif scope_type in ["department", "unit", "branch"]:
+        if target_id is not None:
+            nodes = await get_descendant_ids(target_id)
+            q_users = select(User.id).where(User.org_node_id.in_(nodes))
+            res_users = await session.execute(q_users)
+            evaluator_ids = list(res_users.scalars().all())
+            if not evaluator_ids:
+                evaluator_ids = [-9999]
+                
+    # Apply Unit level coordinator restrictions
+    if current_user.user_level == "Unit":
+        if current_user.org_node_id:
+            unit_nodes = await get_descendant_ids(current_user.org_node_id)
+            q_unit_users = select(User.id).where(User.org_node_id.in_(unit_nodes))
+            res_unit_users = await session.execute(q_unit_users)
+            unit_users_list = list(res_unit_users.scalars().all())
+            
+            if scope_type == "all":
+                evaluator_ids = unit_users_list
+            else:
+                evaluator_ids = [uid for uid in evaluator_ids if uid in unit_users_list]
+                if not evaluator_ids:
+                    evaluator_ids = [-9999]
+
+    # 2. Fetch surveys
+    query = select(ClientSurvey)
+    if scope_type != "all" or current_user.user_level == "Unit":
+        query = query.where(ClientSurvey.evaluator_user_id.in_(evaluator_ids))
+        
+    res = await session.execute(query)
+    surveys = res.scalars().all()
+
+    # 3. Sentiment Analysis Lexicon scoring
+    POSITIVE_WORDS = {
+        "excellent", "good", "great", "fast", "quick", "polite", "friendly", 
+        "helpful", "accommodating", "satisfied", "satisfactory", "outstanding", 
+        "clean", "clear", "efficient", "well", "happy", "smooth", "best", "perfect", "guided"
+    }
+    NEGATIVE_WORDS = {
+        "slow", "bad", "queue", "unclear", "rude", "delayed", "delay", "poor", 
+        "unsatisfactory", "warm", "hot", "ac", "wait", "long", "aircon", "broken", 
+        "confusing", "lost", "dirty", "worst", "unhelpful", "difficult", "improvement"
+    }
+
+    pos_count = 0
+    neg_count = 0
+    neu_count = 0
+    sentiment_feed = []
+
+    for s in surveys:
+        if s.suggestions:
+            words = s.suggestions.lower().replace(".", " ").replace(",", " ").replace("!", " ").split()
+            pos_w = sum(1 for w in words if w in POSITIVE_WORDS)
+            neg_w = sum(1 for w in words if w in NEGATIVE_WORDS)
+            
+            if pos_w > neg_w:
+                sentiment = "positive"
+                pos_count += 1
+            elif neg_w > pos_w:
+                sentiment = "negative"
+                neg_count += 1
+            else:
+                sentiment = "neutral"
+                neu_count += 1
+                
+            sentiment_feed.append({
+                "id": s.id,
+                "suggestions": s.suggestions,
+                "sentiment": sentiment,
+                "created_on": s.created_on.isoformat() if s.created_on else None,
+                "client_type": s.client_type
+            })
+
+    # 4. Group by timeline period
+    import collections
+    period_data = collections.defaultdict(list)
+    for s in surveys:
+        if not s.created_on:
+            continue
+        if time_group == "daily":
+            key = s.created_on.strftime("%Y-%m-%d")
+        elif time_group == "weekly":
+            key = s.created_on.strftime("%Y-W%W")
+        elif time_group == "yearly":
+            key = s.created_on.strftime("%Y")
+        else: # monthly
+            key = s.created_on.strftime("%Y-%m")
+        period_data[key].append(s)
+
+    sorted_keys = sorted(period_data.keys())
+    timeline = []
+    for key in sorted_keys:
+        items = period_data[key]
+        sum_rating = 0
+        rating_count = 0
+        satisfied = 0
+        
+        for item in items:
+            ratings = [getattr(item, f"sqd{j}") for j in range(9) if getattr(item, f"sqd{j}") is not None]
+            if ratings:
+                sum_rating += sum(ratings) / len(ratings)
+                rating_count += 1
+            if item.sqd0 is not None and item.sqd0 >= 4:
+                satisfied += 1
+                
+        avg_val = round(sum_rating / rating_count, 2) if rating_count > 0 else 5.0
+        csat_val = round((satisfied / len(items)) * 100, 1) if items else 100.0
+        
+        timeline.append({
+            "period": key,
+            "avg_rating": avg_val,
+            "csat": csat_val,
+            "count": len(items)
+        })
+
+    # 5. Linear Regression Trend Forecasting
+    n = len(timeline)
+    predicted_rating = 5.0
+    predicted_csat = 100.0
+    prediction_msg = "No predictions available yet. Feed more data."
+    trend_direction = "stable"
+    trend_pct = 0.0
+
+    if n >= 2:
+        x_vals = list(range(1, n + 1))
+        y_rating = [t["avg_rating"] for t in timeline]
+        y_csat = [t["csat"] for t in timeline]
+        
+        mean_x = sum(x_vals) / n
+        mean_yr = sum(y_rating) / n
+        mean_yc = sum(y_csat) / n
+        
+        num_r = sum((x_vals[i] - mean_x) * (y_rating[i] - mean_yr) for i in range(n))
+        num_c = sum((x_vals[i] - mean_x) * (y_csat[i] - mean_yc) for i in range(n))
+        den = sum((x_vals[i] - mean_x) ** 2 for i in range(n))
+        
+        m_r = num_r / den if den != 0 else 0
+        c_r = mean_yr - m_r * mean_x
+        
+        m_c = num_c / den if den != 0 else 0
+        c_c = mean_yc - m_c * mean_x
+        
+        next_x = n + 1
+        predicted_rating = round(max(1.0, min(5.0, m_r * next_x + c_r)), 2)
+        predicted_csat = round(max(0.0, min(100.0, m_c * next_x + c_c)), 1)
+        
+        last_rating = y_rating[-1]
+        if last_rating > 0:
+            trend_pct = round(((predicted_rating - last_rating) / last_rating) * 100, 1)
+            
+        if trend_pct > 0.5:
+            trend_direction = "up"
+            prediction_msg = f"Projected rating is trending UP by {trend_pct}% for the next period."
+        elif trend_pct < -0.5:
+            trend_direction = "down"
+            prediction_msg = f"Projected rating is trending DOWN by {abs(trend_pct)}% for the next period. Bottleneck warnings active."
+        else:
+            prediction_msg = "Projected rating remains stable for the next period."
+
+    # Calculate average rating per SQD dimension
+    sqd_sums = [0.0] * 9
+    sqd_counts = [0] * 9
+    for s in surveys:
+        for j in range(9):
+            val = getattr(s, f"sqd{j}")
+            if val is not None and val > 0:
+                sqd_sums[j] += val
+                sqd_counts[j] += 1
+                
+    sqd_averages = []
+    labels = [
+        "General Satisfaction", "Responsiveness", "Reliability", 
+        "Access & Facilities", "Communication", "Costs Integrity", 
+        "Process Integrity", "Assurance", "Service Outcome"
+    ]
+    for j in range(9):
+        avg_val = round(sqd_sums[j] / sqd_counts[j], 2) if sqd_counts[j] > 0 else 5.0
+        sqd_averages.append({
+            "dimension": f"SQD{j}",
+            "label": labels[j],
+            "average": avg_val
+        })
+
+    return {
+        "scope_type": scope_type,
+        "target_id": target_id,
+        "time_group": time_group,
+        "summary": {
+            "total_surveys": len(surveys),
+            "sentiment": {
+                "positive": pos_count,
+                "negative": neg_count,
+                "neutral": neu_count
+            },
+            "predictive": {
+                "predicted_rating": predicted_rating,
+                "predicted_csat": predicted_csat,
+                "trend": trend_direction,
+                "trend_pct": trend_pct,
+                "message": prediction_msg
+            },
+            "sqd_averages": sqd_averages
+        },
+        "timeline": timeline,
+        "sentiment_feed": sentiment_feed[:20]
+    }
+
