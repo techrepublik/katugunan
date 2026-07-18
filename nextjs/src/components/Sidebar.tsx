@@ -16,7 +16,8 @@ import {
   Shield,
   BarChart3,
   Activity,
-  UserCheck
+  UserCheck,
+  FileSpreadsheet
 } from "lucide-react";
 
 interface SidebarProps {
@@ -53,6 +54,7 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
     { name: "Analytics Insights", href: "/admin/analytics", icon: BarChart3, permission: "manage_users", roles: ["Super", "Admin"] },
     { name: "Live Monitor", href: "/admin/monitor", icon: Activity, permission: "manage_users", roles: ["Super", "Admin"] },
     { name: "Personnel Performance", href: "/admin/personnel-monitor", icon: UserCheck, permission: "manage_users", roles: ["Super", "Admin"] },
+    { name: "Detailed Responses", href: "/admin/personnel-responses", icon: FileSpreadsheet, permission: "manage_users", roles: ["Super", "Admin"] },
     { name: "Org Tree Explorer", href: "/admin/org-tree", icon: FolderTree, permission: "manage_users", roles: ["Super", "Admin"] },
     { name: "Service Catalog", href: "/admin/services", icon: Settings, permission: "manage_services", roles: ["Super", "Admin"] },
     { name: "Survey Questions", href: "/admin/questions", icon: HelpCircle, permission: "manage_questions", roles: ["Super", "Admin"] },

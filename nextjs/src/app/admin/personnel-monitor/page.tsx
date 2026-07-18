@@ -108,6 +108,11 @@ export default function PersonnelMonitorPage() {
   const [stats, setStats] = useState<PersonnelStats | null>(null);
   const [metricToggle, setMetricToggle] = useState<"rating" | "csat">("rating");
 
+  // Searchable Target Combobox states
+  const [personnelRatings, setPersonnelRatings] = useState<Record<string, number>>({});
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
   // Fetch users and nodes to populate target select options
@@ -127,6 +132,12 @@ export default function PersonnelMonitorPage() {
       if (nodesRes.ok) {
         const nodesData = await nodesRes.json();
         setNodesList(nodesData);
+      }
+
+      const ratingsRes = await fetch(`${apiBase}/surveys/personnel-ratings`, { headers });
+      if (ratingsRes.ok) {
+        const ratingsData = await ratingsRes.json();
+        setPersonnelRatings(ratingsData);
       }
     } catch (err) {
       console.error("Error loading filter options:", err);
@@ -221,6 +232,8 @@ export default function PersonnelMonitorPage() {
     const newScope = e.target.value;
     setScopeType(newScope);
     setTargetId(""); // will trigger targetId picker logic in useEffect
+    setDropdownOpen(false);
+    setSearchQuery("");
   };
 
   if (loading) {
@@ -423,18 +436,67 @@ export default function PersonnelMonitorPage() {
 
             {/* Target Select option */}
             {scopeType !== "all" && (
-              <div className="flex flex-col gap-1 text-xs">
+              <div className="flex flex-col gap-1 text-xs relative">
                 <label className="font-bold text-slate-500 uppercase tracking-wider text-[9px]">Select Target Entity</label>
-                <select 
-                  value={targetId}
-                  onChange={(e) => setTargetId(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 text-black font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500 max-w-[240px]"
+                
+                <button 
+                  type="button"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 text-black font-semibold flex items-center justify-between gap-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-[240px] text-left"
                 >
-                  <option value="" disabled>-- Select --</option>
-                  {getTargetOptions().map(opt => (
-                    <option key={opt.id} value={opt.id}>{opt.name}</option>
-                  ))}
-                </select>
+                  <span className="truncate">
+                    {targetId ? (() => {
+                      const selected = getTargetOptions().find(opt => opt.id.toString() === targetId);
+                      if (!selected) return "-- Select --";
+                      
+                      if (scopeType === "individual") {
+                        const rating = personnelRatings[targetId];
+                        return `${selected.name} (${rating ? `★ ${rating.toFixed(2)}` : "No ratings"})`;
+                      }
+                      return selected.name;
+                    })() : "-- Select --"}
+                  </span>
+                  <ChevronDown size={14} className="text-slate-400 flex-shrink-0" />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute top-[100%] left-0 mt-1 w-[260px] bg-white border border-slate-200 rounded-2xl shadow-lg z-[2000] p-2.5 space-y-2 flex flex-col">
+                    <input 
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Type to search..."
+                      className="border border-slate-150 rounded-xl px-3 py-2 bg-slate-50 text-[10px] text-black font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="max-h-[160px] overflow-y-auto space-y-0.5 pr-1 scrollbar-thin">
+                      {getTargetOptions().filter(opt => 
+                        opt.name.toLowerCase().includes(searchQuery.toLowerCase())
+                      ).map(opt => {
+                        const rating = scopeType === "individual" ? personnelRatings[opt.id.toString()] : null;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => {
+                              setTargetId(opt.id.toString());
+                              setDropdownOpen(false);
+                              setSearchQuery("");
+                            }}
+                            className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-semibold flex items-center justify-between hover:bg-slate-50 ${opt.id.toString() === targetId ? "bg-emerald-50 text-emerald-800" : "text-slate-700"}`}
+                          >
+                            <span className="truncate max-w-[170px]">{opt.name}</span>
+                            {scopeType === "individual" && (
+                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${rating ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"}`}>
+                                {rating ? `★ ${rating.toFixed(2)}` : "No rating"}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

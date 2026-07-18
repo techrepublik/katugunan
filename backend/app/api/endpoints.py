@@ -1336,3 +1336,86 @@ async def get_personnel_stats(
         "sentiment_feed": sentiment_feed[:20]
     }
 
+
+@router.get("/surveys/personnel-responses", response_model=List[schemas.SurveyOut], dependencies=[Depends(deps.allow_dashboard)])
+async def get_personnel_responses(
+    evaluator_user_id: int,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    service_id: Optional[int] = None,
+    current_user: User = Depends(deps.get_current_user),
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    # 1. Verify Unit level coordinator bounds
+    if current_user.user_level == "Unit":
+        if current_user.org_node_id:
+            # Find unit descendants recursively
+            unit_node = current_user.org_node_id
+            descendant_nodes = [unit_node]
+            to_check = [unit_node]
+            for _ in range(8):
+                if not to_check:
+                    break
+                q = select(OrganizationNode.id).where(OrganizationNode.parent_id.in_(to_check))
+                res = await session.execute(q)
+                children = res.scalars().all()
+                if not children:
+                    break
+                descendant_nodes.extend(children)
+                to_check = list(children)
+            
+            # Verify target evaluator user belongs to these descendant nodes
+            q_val = select(User.id).where(User.id == evaluator_user_id).where(User.org_node_id.in_(descendant_nodes))
+            res_val = await session.execute(q_val)
+            is_valid = res_val.scalar_one_or_none()
+            if not is_valid:
+                raise HTTPException(status_code=403, detail="Not authorized to view responses for this personnel.")
+        else:
+            raise HTTPException(status_code=403, detail="Unit coordinator not linked to any organizational node.")
+
+    # 2. Build Query
+    query = select(ClientSurvey).where(ClientSurvey.evaluator_user_id == evaluator_user_id)
+    
+    from datetime import datetime
+    if start_date:
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d")
+            query = query.where(ClientSurvey.created_on >= sd)
+        except ValueError:
+            pass
+            
+    if end_date:
+        try:
+            ed = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+            query = query.where(ClientSurvey.created_on < ed)
+        except ValueError:
+            pass
+
+    # Filter by service ID link if requested
+    if service_id:
+        from app.models.models import SurveyServiceLink
+        query = query.join(SurveyServiceLink, ClientSurvey.id == SurveyServiceLink.survey_id).where(SurveyServiceLink.service_id == service_id)
+
+    # Order newest first
+    query = query.order_by(ClientSurvey.created_on.desc())
+    
+    res = await session.execute(query)
+    return res.scalars().all()
+
+
+@router.get("/surveys/personnel-ratings", dependencies=[Depends(deps.allow_dashboard)])
+async def get_personnel_ratings(
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    from sqlalchemy import func
+    q = select(ClientSurvey.evaluator_user_id, func.avg(ClientSurvey.sqd0)).group_by(ClientSurvey.evaluator_user_id)
+    res = await session.execute(q)
+    rows = res.all()
+    return {
+        str(row[0]): round(float(row[1]), 2)
+        for row in rows
+        if row[0] is not None
+    }
+
+
+
