@@ -37,12 +37,12 @@ async def login_access_token(
     session: AsyncSession = Depends(get_session),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
-    user = await crud.get_user_by_username(session, form_data.username)
+    user = await crud.get_user_by_email(session, form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
         # We can optionally log failed logins
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect username or password"
+            detail="Incorrect email or password"
         )
     elif not user.is_active:
         raise HTTPException(

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
@@ -14,7 +14,7 @@ export default function LoginPage() {
     setError("");
 
     const params = new URLSearchParams();
-    params.append("username", username);
+    params.append("username", email);
     params.append("password", password);
 
     try {
@@ -27,7 +27,7 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Invalid username or password");
+        throw new Error("Invalid email or password");
       }
 
       const data = await res.json();
@@ -52,14 +52,14 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Username</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1 uppercase tracking-wider">Email Address</label>
             <input
-              type="text"
+              type="email"
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 text-sm"
-              placeholder="Enter username"
+              placeholder="Enter email address"
             />
           </div>
 
