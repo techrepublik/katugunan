@@ -76,6 +76,10 @@ async def seed_surveys():
             suggestions = random.choice(feedbacks) if random.random() > 0.3 else None
             email = f"client{i}@gmail.com" if random.random() > 0.2 else None
             
+            # Assign coordinates inside USM Kabacan campus bounds
+            lat = round(random.uniform(7.122, 7.128), 6)
+            lng = round(random.uniform(124.838, 124.846), 6)
+
             survey = ClientSurvey(
                 client_type=ct,
                 region=reg,
@@ -88,6 +92,8 @@ async def seed_surveys():
                 suggestions=suggestions,
                 email=email,
                 created_on=created_on,
+                latitude=lat,
+                longitude=lng,
                 sqd0=ratings[0],
                 sqd1=ratings[1],
                 sqd2=ratings[2],

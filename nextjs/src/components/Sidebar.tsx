@@ -14,7 +14,8 @@ import {
   User,
   ClipboardList,
   Shield,
-  BarChart3
+  BarChart3,
+  Activity
 } from "lucide-react";
 
 interface SidebarProps {
@@ -49,6 +50,7 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
   const links = [
     { name: "Dashboard", href: "/", icon: PieChart, permission: null, roles: ["Super", "Admin", "Unit"] },
     { name: "Analytics Insights", href: "/admin/analytics", icon: BarChart3, permission: "manage_users", roles: ["Super", "Admin"] },
+    { name: "Live Monitor", href: "/admin/monitor", icon: Activity, permission: "manage_users", roles: ["Super", "Admin"] },
     { name: "Org Tree Explorer", href: "/admin/org-tree", icon: FolderTree, permission: "manage_users", roles: ["Super", "Admin"] },
     { name: "Service Catalog", href: "/admin/services", icon: Settings, permission: "manage_services", roles: ["Super", "Admin"] },
     { name: "Survey Questions", href: "/admin/questions", icon: HelpCircle, permission: "manage_questions", roles: ["Super", "Admin"] },

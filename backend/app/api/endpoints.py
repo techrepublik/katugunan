@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from typing import Any, List
 import qrcode
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, WebSocket, WebSocketDisconnect
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import text
@@ -16,6 +16,27 @@ from app.models.models import User, UserLevel, NodeType, OrganizationNode, Clien
 from app.schemas import schemas
 
 router = APIRouter()
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                self.disconnect(connection)
+
+manager = ConnectionManager()
 
 # Helper to generate QR code files locally
 def generate_qr_code_file(username: str, payload: str) -> str:
@@ -709,7 +730,43 @@ async def create_survey_route(
     survey_in: schemas.SurveyCreate,
     session: AsyncSession = Depends(get_session)
 ) -> Any:
-    return await crud.create_survey(session, survey_in)
+    db_survey = await crud.create_survey(session, survey_in)
+    
+    # Broadcast new survey to WebSocket clients
+    # Assign random nearby campus coordinates if missing (so the map has pins)
+    import random
+    lat = db_survey.latitude
+    lng = db_survey.longitude
+    if not lat or not lng:
+        lat = round(random.uniform(7.122, 7.128), 6)
+        lng = round(random.uniform(124.838, 124.846), 6)
+        
+    await manager.broadcast({
+        "type": "NEW_SURVEY",
+        "survey": {
+            "id": db_survey.id,
+            "client_type": db_survey.client_type,
+            "region": db_survey.region,
+            "created_on": db_survey.created_on.isoformat() if db_survey.created_on else None,
+            "latitude": lat,
+            "longitude": lng,
+            "sqd0": db_survey.sqd0,
+            "suggestions": db_survey.suggestions,
+            "transaction_types": db_survey.transaction_types or {}
+        }
+    })
+    
+    return db_survey
+
+
+@router.websocket("/surveys/live")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @router.get("/surveys", response_model=List[schemas.SurveyOut], dependencies=[Depends(deps.allow_dashboard)])
 async def read_surveys(
