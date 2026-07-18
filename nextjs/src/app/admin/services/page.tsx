@@ -15,6 +15,7 @@ import {
   X, 
   Briefcase 
 } from "lucide-react";
+import Toast from "@/components/Toast";
 
 interface Service {
   id: number;
@@ -39,6 +40,11 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [nodes, setNodes] = useState<OrgNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+  };
 
   // Search & Pagination & Sorting States
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,14 +137,16 @@ export default function ServicesPage() {
       });
 
       if (res.ok) {
+        showToast(isEditing ? "Service updated successfully!" : "Service created successfully!");
         setIsModalOpen(false);
         fetchServicesAndNodes();
       } else {
         const err = await res.json();
-        alert(err.detail || "Failed to save service");
+        showToast(err.detail || "Failed to save service", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     } finally {
       setSaving(false);
     }
@@ -153,10 +161,15 @@ export default function ServicesPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
+        showToast("Service deleted successfully!");
         fetchServicesAndNodes();
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Failed to delete service", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     }
   };
 
@@ -586,6 +599,7 @@ export default function ServicesPage() {
           </div>
         </div>
       )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

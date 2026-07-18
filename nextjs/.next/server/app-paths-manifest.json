@@ -1,6 +1,14 @@
 {
-  "/admin/org-tree/page": "app/admin/org-tree/page.js",
-  "/admin/services/page": "app/admin/services/page.js",
+  "/_not-found": "app/_not-found.js",
+  "/admin/audit-logs/page": "app/admin/audit-logs/page.js",
   "/admin/questions/page": "app/admin/questions/page.js",
-  "/admin/users/page": "app/admin/users/page.js"
+  "/admin/org-tree/page": "app/admin/org-tree/page.js",
+  "/admin/roles-permissions/page": "app/admin/roles-permissions/page.js",
+  "/admin/profile/page": "app/admin/profile/page.js",
+  "/admin/services/page": "app/admin/services/page.js",
+  "/admin/users/page": "app/admin/users/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/admin/metadata/page": "app/admin/metadata/page.js",
+  "/survey/[username]/page": "app/survey/[username]/page.js"
 }

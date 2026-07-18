@@ -71,8 +71,8 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
 
       <nav className="flex-1 space-y-2">
         {links.map((link) => {
-          const isSuper = userLevel === "Super";
-          const hasAccess = isSuper || !link.permission || permissions.includes(link.permission) || link.roles.includes(userLevel);
+          const isSuper = userLevel?.toLowerCase() === "super";
+          const hasAccess = isSuper || !link.permission || permissions.includes(link.permission) || link.roles.map(r => r.toLowerCase()).includes(userLevel?.toLowerCase());
           if (!hasAccess) return null;
 
           const Icon = link.icon;

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import { Loader2, Plus, Trash, Users, MapPin, ChevronDown, ChevronUp, Edit2, Check, X } from "lucide-react";
+import Toast from "@/components/Toast";
 
 interface ClientType {
   id: number;
@@ -19,6 +20,11 @@ export default function MetadataPage() {
   const [clientTypes, setClientTypes] = useState<ClientType[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+  };
 
   // Accordion Expand/Collapse States (Collapsed by default)
   const [ctExpanded, setCtExpanded] = useState(false);
@@ -76,14 +82,16 @@ export default function MetadataPage() {
       });
 
       if (res.ok) {
+        showToast("Client type added successfully!");
         setNewClientType("");
         fetchMetadata();
       } else {
         const data = await res.json();
-        alert(data.detail || "Failed to add client type");
+        showToast(data.detail || "Failed to add client type", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     } finally {
       setAddingCt(false);
     }
@@ -105,14 +113,16 @@ export default function MetadataPage() {
       });
 
       if (res.ok) {
+        showToast("Region added successfully!");
         setNewRegion("");
         fetchMetadata();
       } else {
         const data = await res.json();
-        alert(data.detail || "Failed to add region");
+        showToast(data.detail || "Failed to add region", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     } finally {
       setAddingReg(false);
     }
@@ -133,15 +143,17 @@ export default function MetadataPage() {
       });
 
       if (res.ok) {
+        showToast("Client type updated successfully!");
         setEditingCtId(null);
         setEditingCtValue("");
         fetchMetadata();
       } else {
         const data = await res.json();
-        alert(data.detail || "Failed to update client type");
+        showToast(data.detail || "Failed to update client type", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     } finally {
       setUpdatingCtId(null);
     }
@@ -162,15 +174,17 @@ export default function MetadataPage() {
       });
 
       if (res.ok) {
+        showToast("Region updated successfully!");
         setEditingRegId(null);
         setEditingRegValue("");
         fetchMetadata();
       } else {
         const data = await res.json();
-        alert(data.detail || "Failed to update region");
+        showToast(data.detail || "Failed to update region", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     } finally {
       setUpdatingRegId(null);
     }
@@ -184,9 +198,16 @@ export default function MetadataPage() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (res.ok) fetchMetadata();
+      if (res.ok) {
+        showToast("Client type deleted successfully!");
+        fetchMetadata();
+      } else {
+        const data = await res.json();
+        showToast(data.detail || "Failed to delete client type", "error");
+      }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     }
   };
 
@@ -198,9 +219,16 @@ export default function MetadataPage() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (res.ok) fetchMetadata();
+      if (res.ok) {
+        showToast("Region deleted successfully!");
+        fetchMetadata();
+      } else {
+        const data = await res.json();
+        showToast(data.detail || "Failed to delete region", "error");
+      }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     }
   };
 
@@ -465,6 +493,7 @@ export default function MetadataPage() {
           </div>
         </main>
       </div>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

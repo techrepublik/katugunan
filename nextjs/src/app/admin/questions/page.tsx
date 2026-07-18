@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import { Loader2, Plus, Trash2, Edit2, Check, X, HelpCircle } from "lucide-react";
-
+import Toast from "@/components/Toast";
+const apiBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 interface Question {
   id: number;
   question_id: string;
@@ -18,23 +19,32 @@ export default function QuestionsPage() {
   const [user, setUser] = useState<any>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  // Form Fields for creating a new question inline
-  const [questionId, setQuestionId] = useState("");
-  const [questionText, setQuestionText] = useState("");
-  const [questionType, setQuestionType] = useState("General");
-  const [creating, setCreating] = useState(false);
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+  };
 
-  // Inline Editing States
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editQuestionId, setEditQuestionId] = useState("");
-  const [editQuestionText, setEditQuestionText] = useState("");
-  const [editQuestionType, setEditQuestionType] = useState("General");
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [modalRecordId, setModalRecordId] = useState<number | null>(null);
+  const [modalQuestionId, setModalQuestionId] = useState("");
+  const [modalQuestionText, setModalQuestionText] = useState("");
+  const [modalQuestionType, setModalQuestionType] = useState("General");
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+
+  const resetModal = () => {
+    setModalQuestionId("");
+    setModalQuestionText("");
+    setModalQuestionType("General");
+    setModalRecordId(null);
+    setIsEditMode(false);
+  };
 
   const fetchQuestions = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/questions`, {
+      const res = await fetch(`${apiBase}/questions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -42,6 +52,7 @@ export default function QuestionsPage() {
       }
     } catch (err) {
       console.error(err);
+      showToast("Failed to fetch questions", "error");
     }
   };
 
@@ -51,7 +62,6 @@ export default function QuestionsPage() {
       router.push("/login");
       return;
     }
-
     const initPage = async () => {
       try {
         const headers = { Authorization: `Bearer ${token}` };
@@ -62,80 +72,68 @@ export default function QuestionsPage() {
         await fetchQuestions(token);
       } catch (err) {
         console.error(err);
+        showToast("Authentication error", "error");
         localStorage.removeItem("token");
         router.push("/login");
       } finally {
         setLoading(false);
       }
     };
-
     initPage();
   }, [router]);
 
-  const handleAddQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!questionId.trim() || !questionText.trim()) return;
-    setCreating(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/questions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          question_id: questionId.trim(),
-          question_question: questionText.trim(),
-          question_type: questionType
-        })
-      });
-
-      if (res.ok) {
-        setQuestionId("");
-        setQuestionText("");
-        setQuestionType("General");
-        if (token) fetchQuestions(token);
-      } else {
-        const errData = await res.json();
-        alert(errData.detail || "Failed to create question");
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCreating(false);
-    }
+  const openCreateModal = () => {
+    resetModal();
+    setModalOpen(true);
   };
 
-  const handleUpdateQuestion = async (id: number) => {
-    if (!editQuestionId.trim() || !editQuestionText.trim()) return;
-    setUpdatingId(id);
+  const openEditModal = (q: Question) => {
+    setModalRecordId(q.id);
+    setModalQuestionId(q.question_id);
+    setModalQuestionText(q.question_question);
+    setModalQuestionType(q.question_type);
+    setIsEditMode(true);
+    setModalOpen(true);
+  };
+
+  const handleModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalQuestionId.trim() || !modalQuestionText.trim()) {
+      showToast("ID and Text are required", "error");
+      return;
+    }
+    setModalSubmitting(true);
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/questions/${id}`, {
-        method: "PUT",
+      const url = isEditMode
+          ? `${apiBase}/questions/${modalRecordId}`
+          : `${apiBase}/questions`;
+      const method = isEditMode ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          question_id: editQuestionId.trim(),
-          question_question: editQuestionText.trim(),
-          question_type: editQuestionType
+          question_id: modalQuestionId.trim(),
+          question_question: modalQuestionText.trim(),
+          question_type: modalQuestionType
         })
       });
-
       if (res.ok) {
-        setEditingId(null);
-        if (token) fetchQuestions(token);
+        showToast(isEditMode ? "Question updated" : "Question created");
+        setModalOpen(false);
+        if (token) await fetchQuestions(token);
       } else {
         const errData = await res.json();
-        alert(errData.detail || "Failed to update question");
+        showToast(errData.detail || (isEditMode ? "Failed to update" : "Failed to create"), "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("Network error", "error");
     } finally {
-      setUpdatingId(null);
+      setModalSubmitting(false);
     }
   };
 
@@ -143,35 +141,47 @@ export default function QuestionsPage() {
     if (!confirm("Are you sure you want to delete this question? This will affect metric calculations that reference this Question ID.")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/questions/${id}`, {
+      const res = await fetch(`${apiBase}/questions/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        if (token) fetchQuestions(token);
+        showToast("Question deleted");
+        if (token) await fetchQuestions(token);
+      } else {
+        const errData = await res.json();
+        showToast(errData.detail || "Failed to delete", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("Network error", "error");
     }
   };
 
-  const hasWriteAccess = user?.user_level === "Super" || user?.user_level === "Admin";
+  const hasWriteAccess = user?.user_level?.toLowerCase() === "super" || user?.user_level?.toLowerCase() === "admin";
 
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar userLevel={user?.user_level || "Unit"} />
       <div className="flex-1 flex flex-col">
         <Navbar username={user ? `${user.first_name} ${user.last_name}` : "Admin"} userLevel={user?.user_level || "Unit"} />
-
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">Dynamic Survey Questions</h1>
-              <p className="text-sm text-slate-500 mt-1">
-                Configure Service Quality Dimension (SQD) feedback criteria. Manage all entries inline.
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">Dynamic Survey Questions</h1>
+                <p className="text-sm text-slate-500 mt-1">Configure Service Quality Dimension (SQD) feedback criteria. Manage all entries inline.</p>
+              </div>
+              {hasWriteAccess && (
+                <button
+                  onClick={openCreateModal}
+                  className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-1.5 rounded-lg text-xs transition-colors"
+                >
+                  <Plus size={12} />
+                  <span>Add Question</span>
+                </button>
+              )}
             </div>
-
             {loading ? (
               <div className="min-h-[400px] flex items-center justify-center bg-white rounded-xl shadow-sm border border-slate-200">
                 <Loader2 className="animate-spin text-emerald-700" size={36} />
@@ -187,7 +197,6 @@ export default function QuestionsPage() {
                     <p className="text-xs text-slate-400">Add, update, or remove question entries using the inline rows below.</p>
                   </div>
                 </div>
-
                 <div className="overflow-x-auto rounded-xl border border-slate-100">
                   <table className="w-full text-xs text-left border-collapse">
                     <thead>
@@ -202,170 +211,39 @@ export default function QuestionsPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {questions.map(q => {
-                        const isEditing = editingId === q.id;
-                        const isUpdating = updatingId === q.id;
+                        const isUpdating = false;
                         return (
                           <tr key={q.id} className="hover:bg-slate-50/40 transition-colors">
-                            {/* Question ID Column */}
-                            <td className="p-4 font-bold text-slate-800">
-                              {isEditing ? (
-                                <input
-                                  type="text"
-                                  required
-                                  value={editQuestionId}
-                                  onChange={(e) => setEditQuestionId(e.target.value)}
-                                  className="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-bold"
-                                />
-                              ) : (
-                                q.question_id
-                              )}
-                            </td>
-
-                            {/* Classification Column */}
+                            <td className="p-4 font-bold text-slate-800">{q.question_id}</td>
                             <td className="p-4">
-                              {isEditing ? (
-                                <select
-                                  value={editQuestionType}
-                                  onChange={(e) => setEditQuestionType(e.target.value)}
-                                  className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500"
-                                >
-                                  <option value="General">General</option>
-                                  <option value="Admin">Admin</option>
-                                  <option value="Teaching">Teaching</option>
-                                  <option value="Research">Research</option>
-                                  <option value="Support">Support</option>
-                                  <option value="Production">Production</option>
-                                </select>
-                              ) : (
-                                <span className="bg-emerald-50 text-emerald-800 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg border border-emerald-100">
-                                  {q.question_type}
-                                </span>
-                              )}
+                              <span className="bg-emerald-50 text-emerald-800 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg border border-emerald-100">
+                                {q.question_type}
+                              </span>
                             </td>
-
-                            {/* Question text Column */}
-                            <td className="p-4 text-slate-600 font-medium">
-                              {isEditing ? (
-                                <textarea
-                                  required
-                                  value={editQuestionText}
-                                  onChange={(e) => setEditQuestionText(e.target.value)}
-                                  className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500 h-16 resize-y"
-                                />
-                              ) : (
-                                q.question_question
-                              )}
-                            </td>
-
-                            {/* Action Column for Super/Admin */}
+                            <td className="p-4 text-slate-600 font-medium">{q.question_question}</td>
                             {hasWriteAccess && (
                               <td className="p-4 text-right">
-                                {isEditing ? (
-                                  <div className="flex justify-end gap-1.5">
-                                    <button
-                                      onClick={() => handleUpdateQuestion(q.id)}
-                                      disabled={isUpdating}
-                                      className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50"
-                                      title="Save"
-                                    >
-                                      {isUpdating ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setEditingId(null);
-                                      }}
-                                      className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors"
-                                      title="Cancel"
-                                    >
-                                      <X size={14} />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex justify-end gap-1.5">
-                                    <button
-                                      onClick={() => {
-                                        setEditingId(q.id);
-                                        setEditQuestionId(q.question_id);
-                                        setEditQuestionText(q.question_question);
-                                        setEditQuestionType(q.question_type);
-                                      }}
-                                      className="p-1.5 text-slate-400 hover:text-emerald-700 rounded-lg hover:bg-slate-50 transition-all"
-                                      title="Edit Question"
-                                    >
-                                      <Edit2 size={13} />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteQuestion(q.id)}
-                                      className="p-1.5 text-slate-400 hover:text-red-650 rounded-lg hover:bg-red-50 transition-all"
-                                      title="Delete Question"
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                  </div>
-                                )}
+                                <div className="flex justify-end gap-1.5">
+                                  <button
+                                    onClick={() => openEditModal(q)}
+                                    className="p-1.5 text-slate-400 hover:text-emerald-700 rounded-lg hover:bg-slate-50 transition-all"
+                                    title="Edit Question"
+                                  >
+                                    <Edit2 size={13} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteQuestion(q.id)}
+                                    className="p-1.5 text-slate-400 hover:text-red-650 rounded-lg hover:bg-red-50 transition-all"
+                                    title="Delete Question"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
                               </td>
                             )}
                           </tr>
                         );
                       })}
-
-                      {/* Inline Creation Row (Only for Super/Admin) */}
-                      {hasWriteAccess && (
-                        <tr className="bg-slate-50/50">
-                          {/* New ID */}
-                          <td className="p-4">
-                            <input
-                              type="text"
-                              required
-                              value={questionId}
-                              onChange={(e) => setQuestionId(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-bold"
-                              placeholder="e.g. SQD9"
-                            />
-                          </td>
-
-                          {/* New Type */}
-                          <td className="p-4">
-                            <select
-                              value={questionType}
-                              onChange={(e) => setQuestionType(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
-                            >
-                              <option value="General">General</option>
-                              <option value="Admin">Admin</option>
-                              <option value="Teaching">Teaching</option>
-                              <option value="Research">Research</option>
-                              <option value="Support">Support</option>
-                              <option value="Production">Production</option>
-                            </select>
-                          </td>
-
-                          {/* New Text */}
-                          <td className="p-4">
-                            <input
-                              type="text"
-                              required
-                              value={questionText}
-                              onChange={(e) => setQuestionText(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-medium"
-                              placeholder="Enter new question statement..."
-                            />
-                          </td>
-
-                          {/* Action Button */}
-                          <td className="p-4 text-right">
-                            <button
-                              type="button"
-                              onClick={handleAddQuestion}
-                              disabled={creating}
-                              className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1.5 ml-auto transition-colors disabled:opacity-50"
-                            >
-                              {creating ? <Loader2 className="animate-spin" size={12} /> : <Plus size={12} />}
-                              <span>Add</span>
-                            </button>
-                          </td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
                 </div>
@@ -374,6 +252,70 @@ export default function QuestionsPage() {
           </div>
         </main>
       </div>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">{isEditMode ? "Edit Question" : "Add New Question"}</h3>
+            <form onSubmit={handleModalSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Question ID</label>
+                <input
+                  type="text"
+                  required
+                  value={modalQuestionId}
+                  onChange={e => setModalQuestionId(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500"
+                  placeholder="e.g. SQD9"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Classification</label>
+                <select
+                  value={modalQuestionType}
+                  onChange={e => setModalQuestionType(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="General">General</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Teaching">Teaching</option>
+                  <option value="Research">Research</option>
+                  <option value="Support">Support</option>
+                  <option value="Production">Production</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Question Statement</label>
+                <textarea
+                  required
+                  value={modalQuestionText}
+                  onChange={e => setModalQuestionText(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-emerald-500 h-20 resize-y"
+                  placeholder="Enter question statement..."
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalSubmitting}
+                  className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-1.5 rounded-lg text-sm disabled:opacity-50"
+                >
+                  {modalSubmitting ? <Loader2 className="animate-spin" size={14} /> : isEditMode ? <Check size={14} /> : <Plus size={14} />}
+                  <span>{isEditMode ? "Update" : "Create"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import { Shield, Plus, Edit2, Trash2, CheckCircle2, Lock, X } from "lucide-react";
+import Toast from "@/components/Toast";
 
 interface Permission {
   id: number;
@@ -24,8 +25,11 @@ export default function RolesPermissionsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+  };
 
   // Modals UI
   const [roleModalOpen, setRoleModalOpen] = useState(false);
@@ -62,7 +66,7 @@ export default function RolesPermissionsPage() {
       if (permsRes.ok) setPermissions(await permsRes.json());
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch roles and permissions configuration.");
+      showToast("Failed to fetch roles and permissions configuration.", "error");
     } finally {
       setLoading(false);
     }
@@ -72,14 +76,8 @@ export default function RolesPermissionsPage() {
     fetchData();
   }, []);
 
-  const clearMessages = () => {
-    setError("");
-    setSuccessMsg("");
-  };
-
   // Role CRUD Actions
   const openAddRole = () => {
-    clearMessages();
     setEditMode(false);
     setSelectedId(null);
     setRoleName("");
@@ -89,7 +87,6 @@ export default function RolesPermissionsPage() {
   };
 
   const openEditRole = (role: Role) => {
-    clearMessages();
     setEditMode(true);
     setSelectedId(role.id);
     setRoleName(role.name);
@@ -100,7 +97,6 @@ export default function RolesPermissionsPage() {
 
   const handleRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearMessages();
     try {
       const token = localStorage.getItem("token");
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -127,21 +123,20 @@ export default function RolesPermissionsPage() {
         throw new Error(data.detail || "Error saving role settings.");
       }
 
-      setSuccessMsg(editMode ? "Role settings updated successfully!" : "New security role registered successfully!");
+      showToast(editMode ? "Role settings updated successfully!" : "New security role registered successfully!");
       setRoleModalOpen(false);
       fetchData();
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+      showToast(err.message || "An unexpected error occurred.", "error");
     }
   };
 
   const handleDeleteRole = async (id: number, name: string) => {
     if (["Super", "Admin", "Unit", "Client"].includes(name)) {
-      alert("System default roles cannot be deleted.");
+      showToast("System default roles cannot be deleted.", "error");
       return;
     }
     if (!confirm(`Are you sure you want to permanently delete the role "${name}"?`)) return;
-    clearMessages();
 
     try {
       const token = localStorage.getItem("token");
@@ -157,10 +152,10 @@ export default function RolesPermissionsPage() {
         throw new Error(data.detail || "Error deleting role.");
       }
 
-      setSuccessMsg(`Role "${name}" deleted successfully.`);
+      showToast(`Role "${name}" deleted successfully.`);
       fetchData();
     } catch (err: any) {
-      setError(err.message || "Error deleting role.");
+      showToast(err.message || "Error deleting role.", "error");
     }
   };
 
@@ -174,7 +169,6 @@ export default function RolesPermissionsPage() {
 
   // Permission CRUD Actions
   const openAddPerm = () => {
-    clearMessages();
     setEditMode(false);
     setSelectedId(null);
     setPermName("");
@@ -184,7 +178,6 @@ export default function RolesPermissionsPage() {
   };
 
   const openEditPerm = (perm: Permission) => {
-    clearMessages();
     setEditMode(true);
     setSelectedId(perm.id);
     setPermName(perm.name);
@@ -195,7 +188,6 @@ export default function RolesPermissionsPage() {
 
   const handlePermSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearMessages();
     try {
       const token = localStorage.getItem("token");
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -222,21 +214,20 @@ export default function RolesPermissionsPage() {
         throw new Error(data.detail || "Error saving permission settings.");
       }
 
-      setSuccessMsg(editMode ? "Permission settings updated successfully!" : "New permission key registered successfully!");
+      showToast(editMode ? "Permission settings updated successfully!" : "New permission key registered successfully!");
       setPermModalOpen(false);
       fetchData();
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+      showToast(err.message || "An unexpected error occurred.", "error");
     }
   };
 
   const handleDeletePerm = async (id: number, name: string) => {
     if (["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs"].includes(name)) {
-      alert("System default permissions cannot be deleted.");
+      showToast("System default permissions cannot be deleted.", "error");
       return;
     }
     if (!confirm(`Are you sure you want to permanently delete the permission "${name}"?`)) return;
-    clearMessages();
 
     try {
       const token = localStorage.getItem("token");
@@ -252,10 +243,10 @@ export default function RolesPermissionsPage() {
         throw new Error(data.detail || "Error deleting permission.");
       }
 
-      setSuccessMsg(`Permission "${name}" deleted successfully.`);
+      showToast(`Permission "${name}" deleted successfully.`);
       fetchData();
     } catch (err: any) {
-      setError(err.message || "Error deleting permission.");
+      showToast(err.message || "Error deleting permission.", "error");
     }
   };
 
@@ -320,18 +311,6 @@ export default function RolesPermissionsPage() {
         </div>
 
         {/* Notifications */}
-        {error && (
-          <div className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl mb-6 text-sm font-medium flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-600 block shrink-0" />
-            {error}
-          </div>
-        )}
-        {successMsg && (
-          <div className="bg-emerald-50 text-emerald-800 border border-emerald-250 px-4 py-3 rounded-xl mb-6 text-sm font-medium flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 block shrink-0" />
-            {successMsg}
-          </div>
-        )}
 
         {loading ? (
           <div className="bg-white p-12 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center">
@@ -648,6 +627,7 @@ export default function RolesPermissionsPage() {
           </div>
         </div>
       )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

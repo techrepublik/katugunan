@@ -92,8 +92,8 @@ export default function AuditLogsPage() {
       return matchesSearch && matchesAction;
     })
     .sort((a, b) => {
-      let valA = a[sortField] || "";
-      let valB = b[sortField] || "";
+      let valA: any = a[sortField] || "";
+      let valB: any = b[sortField] || "";
 
       if (sortField === "timestamp") {
         valA = new Date(a.timestamp).getTime();

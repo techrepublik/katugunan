@@ -7,6 +7,7 @@ import {
   Loader2, Plus, Trash, UserPlus, FileText, QrCode, 
   Printer, Search, ArrowUpDown, Edit, Shield, Info, CheckSquare, Square
 } from "lucide-react";
+import Toast from "@/components/Toast";
 
 interface User {
   id: number;
@@ -49,6 +50,11 @@ export default function UsersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allPermissions, setAllPermissions] = useState<any[]>(ALL_PERMISSIONS);
   const [allRoles, setAllRoles] = useState<any[]>([]);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+  };
   
   // UI states
   const [viewQrUser, setViewQrUser] = useState<User | null>(null);
@@ -199,7 +205,7 @@ export default function UsersPage() {
       } else {
         // Validation check for adding user
         if (password.trim() === "") {
-          alert("Password is required for new accounts");
+          showToast("Password is required for new accounts", "error");
           return;
         }
         res = await fetch(`${apiBase}/users`, {
@@ -213,15 +219,16 @@ export default function UsersPage() {
       }
 
       if (res.ok) {
+        showToast(editMode ? "User updated successfully!" : "User created successfully!");
         setIsModalOpen(false);
         fetchUsersAndNodes();
       } else {
         const errorData = await res.json();
-        alert(errorData.detail || "Failed to save user account details");
+        showToast(errorData.detail || "Failed to save user account details", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("A network error occurred.");
+      showToast("A network error occurred.", "error");
     }
   };
 
@@ -234,13 +241,15 @@ export default function UsersPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
+        showToast("User deleted successfully!");
         fetchUsersAndNodes();
       } else {
         const errorData = await res.json();
-        alert(errorData.detail || "Failed to delete account");
+        showToast(errorData.detail || "Failed to delete account", "error");
       }
     } catch (err) {
       console.error(err);
+      showToast("A network error occurred.", "error");
     }
   };
 
@@ -419,8 +428,8 @@ export default function UsersPage() {
                         const userServices = services.filter(s => s.org_node_id === u.org_node_id);
                         
                         // Disable buttons checking for admin editing super
-                        const isSuper = u.user_level === "Super";
-                        const isCurrentUserAdmin = currentUser?.user_level === "Admin";
+                        const isSuper = u.user_level?.toLowerCase() === "super";
+                        const isCurrentUserAdmin = currentUser?.user_level?.toLowerCase() === "admin";
                         const canModify = !(isCurrentUserAdmin && isSuper);
 
                         return (
@@ -638,12 +647,12 @@ export default function UsersPage() {
                   >
                     {allRoles.length > 0 ? (
                       allRoles.map(role => {
-                        if (role.name === "Super" && currentUser?.user_level !== "Super") return null;
+                        if (role.name === "Super" && currentUser?.user_level?.toLowerCase() !== "super") return null;
                         return <option key={role.id} value={role.name}>{role.name}</option>;
                       })
                     ) : (
                       <>
-                        {currentUser?.user_level === "Super" && <option value="Super">Super</option>}
+                        {currentUser?.user_level?.toLowerCase() === "super" && <option value="Super">Super</option>}
                         <option value="Admin">Admin</option>
                         <option value="Unit">Unit</option>
                         <option value="Client">Client</option>
@@ -772,7 +781,7 @@ export default function UsersPage() {
                     const isChecked = selectedPermissions.includes(p.id);
                     
                     // Admin restriction check: standard admins cannot assign manage_users
-                    const isRestricted = currentUser?.user_level === "Admin" && p.id === "manage_users";
+                    const isRestricted = currentUser?.user_level?.toLowerCase() === "admin" && p.id === "manage_users";
 
                     return (
                       <div 
@@ -865,6 +874,7 @@ export default function UsersPage() {
         </div>
       )}
 
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

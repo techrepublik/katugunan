@@ -134,7 +134,7 @@ def migrate():
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;""",
             (
                 u["id"], u["username"], u["email"], u["password"], u["first_name"], u["middle_name"], u["last_name"],
-                u["id_number"], u["sex"], u["birth_date"], u["contact_no"], u["user_level"].upper() if u["user_level"] else None, org_node_id,
+                u["id_number"], u["sex"], u["birth_date"], u["contact_no"], u["user_level"].title() if u["user_level"] else None, org_node_id,
                 u["picture"], u["qrcode_image"], u["qrcode_url"], u["is_active"], u["registered_on"]
             )
         )

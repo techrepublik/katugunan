@@ -91,7 +91,7 @@ export default function DashboardPage() {
     );
   }
 
-  const isUnitLevel = user?.user_level === "Unit";
+  const isUnitLevel = user?.user_level?.toLowerCase() === "unit";
 
   // Default fallbacks for rich analytics if backend lists are empty
   const clientTypeData = stats?.client_type_dist || { "Student": 45, "Faculty": 12, "Staff": 18, "Alumni": 5, "Visitor": 8 };
