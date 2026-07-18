@@ -62,14 +62,20 @@ async def create_org_node(session: AsyncSession, node_in: OrgNodeCreate) -> Orga
     return db_node
 
 async def get_org_nodes(session: AsyncSession) -> List[OrganizationNode]:
+    from sqlalchemy.orm import selectinload
     stmt = select(OrganizationNode).options(selectinload(OrganizationNode.children))
     res = await session.execute(stmt)
     return res.scalars().all()
 
 async def get_org_node_tree(session: AsyncSession) -> List[OrganizationNode]:
     """Fetches root nodes and their children recursively."""
+    from sqlalchemy.orm import selectinload
     stmt = select(OrganizationNode).where(OrganizationNode.parent_id == None).options(
         selectinload(OrganizationNode.children)
+        .selectinload(OrganizationNode.children)
+        .selectinload(OrganizationNode.children)
+        .selectinload(OrganizationNode.children)
+        .selectinload(OrganizationNode.children)
         .selectinload(OrganizationNode.children)
         .selectinload(OrganizationNode.children)
         .selectinload(OrganizationNode.children)

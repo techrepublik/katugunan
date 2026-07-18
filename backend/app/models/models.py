@@ -34,7 +34,10 @@ class OrganizationNode(SQLModel, table=True):
         back_populates="children",
         sa_relationship_kwargs={"remote_side": "OrganizationNode.id"}
     )
-    children: List["OrganizationNode"] = Relationship(back_populates="parent")
+    children: List["OrganizationNode"] = Relationship(
+        back_populates="parent",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
     
     # JSONB field to store flexible configuration parameters
     metadata_info: Optional[dict] = Field(default_factory=dict, sa_column=Column(JSONB))

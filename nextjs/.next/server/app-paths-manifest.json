@@ -1,3 +1,10 @@
 {
-  "/admin/org-tree/page": "app/admin/org-tree/page.js"
+  "/admin/org-tree/page": "app/admin/org-tree/page.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/admin/services/page": "app/admin/services/page.js",
+  "/admin/users/page": "app/admin/users/page.js",
+  "/admin/roles-permissions/page": "app/admin/roles-permissions/page.js",
+  "/admin/metadata/page": "app/admin/metadata/page.js",
+  "/admin/questions/page": "app/admin/questions/page.js"
 }

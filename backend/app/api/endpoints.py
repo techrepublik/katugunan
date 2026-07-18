@@ -5,6 +5,7 @@ import qrcode
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import text
 
 from app.core.config import settings
 from app.core.db import get_session
