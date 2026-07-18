@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import { 
@@ -43,6 +43,15 @@ export default function OrgTreePage() {
 
   // Toast notification state
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  // Search state for filtering the tree
+  const [searchTerm, setSearchTerm] = useState("");
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => setSearchTerm(value), 200);
+  };
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -90,6 +99,60 @@ export default function OrgTreePage() {
     fetchTree();
     fetchUsers();
   }, []);
+
+  const filterTree = (nodes: OrgNode[], query: string): OrgNode[] => {
+    return nodes
+      .map((node) => ({
+        ...node,
+        children: node.children ? filterTree(node.children, query) : [],
+      }))
+      .filter((node) => {
+        const matchName = node.name.toLowerCase().includes(query.toLowerCase());
+        const matchShort = node.short_name && node.short_name.toLowerCase().includes(query.toLowerCase());
+        const matchType = node.node_type.toLowerCase().includes(query.toLowerCase());
+        // Assigned personnel name matching
+        let matchPersonnel = false;
+        if (node.assigned_user_id) {
+          const assigned = users.find(u => u.id === node.assigned_user_id);
+          if (assigned) {
+            const fullName = `${assigned.first_name || ""} ${assigned.last_name || ""}`.trim().toLowerCase();
+            const username = (assigned.username || "").toLowerCase();
+            const q = query.toLowerCase();
+            matchPersonnel = fullName.includes(q) || username.includes(q);
+          }
+        }
+        const match = matchName || matchShort || matchType || matchPersonnel;
+        return match || node.children.length > 0;
+      });
+  }
+
+  // Compute displayed tree based on search
+  const displayedTree = useMemo(() => {
+    if (!searchTerm) return tree;
+    return filterTree(tree, searchTerm);
+  }, [tree, searchTerm]);
+
+  // Auto-expand all nodes when a search term is present so matches are fully visible
+  useEffect(() => {
+    if (!searchTerm) return;
+    const ids = new Set<number>();
+    const collect = (nodes: OrgNode[]) => {
+      nodes.forEach((node) => {
+        ids.add(node.id);
+        if (node.children && node.children.length > 0) {
+          collect(node.children);
+        }
+      });
+    };
+    collect(displayedTree);
+    setExpanded(() => {
+      const newState: Record<number, boolean> = {};
+      ids.forEach((id) => {
+        newState[id] = true;
+      });
+      return newState;
+    });
+  }, [searchTerm, displayedTree]);
 
   const toggleExpand = (id: number) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -472,17 +535,28 @@ export default function OrgTreePage() {
                 <h1 className="text-xl font-bold text-slate-800">Organizational Hierarchy</h1>
                 <p className="text-xs text-slate-400 mt-1">Configure campus branches, colleges, departments, and personnel mapping inline.</p>
               </div>
-              <button
-                onClick={() => {
-                  setInlineAddingParentId(-1); // -1 triggers inline creation at root
-                  setInlineEditingId(null);
-                  setNodeType("BRANCH");
-                }}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-emerald-100 transition-all hover:scale-[1.02]"
-              >
-                <Plus size={14} />
-                Add Campus / Root Node
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 border border-slate-250 rounded-lg px-2 py-1 bg-white">
+                  <Search className="w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Search nodes..."
+                    className="outline-none text-sm"
+                    onChange={handleSearchChange}
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    setInlineAddingParentId(-1); // -1 triggers inline creation at root
+                    setInlineEditingId(null);
+                    setNodeType("BRANCH");
+                  }}
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-emerald-100 transition-all hover:scale-[1.02]"
+                >
+                  <Plus size={14} />
+                  Add Campus / Root Node
+                </button>
+              </div>
             </div>
 
             {/* Tree Container Card */}
@@ -503,8 +577,8 @@ export default function OrgTreePage() {
                 </div>
               ) : (
                 <div className="flex-1 border border-slate-100 rounded-xl divide-y divide-slate-100 max-h-[75vh] overflow-y-auto bg-white/50">
-                  {tree.length > 0 ? (
-                    tree.map(node => renderNode(node))
+                  {displayedTree.length > 0 ? (
+                    displayedTree.map(node => renderNode(node))
                   ) : (
                     <div className="p-12 text-center text-slate-400">
                       <Folder size={40} className="mx-auto text-slate-200 mb-3" />
