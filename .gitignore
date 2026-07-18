@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 !db.sqlite3
 !media/*
+# Node.js & Next.js
+node_modules/
+.next/
+.env*
