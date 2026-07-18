@@ -725,3 +725,304 @@ async def read_survey_stats(
 ) -> Any:
     stats = await crud.get_dashboard_stats(session, current_user)
     return stats
+
+
+from typing import Optional
+from fastapi.responses import StreamingResponse
+from datetime import datetime
+import csv
+import io
+from sqlmodel import select, func
+from app.models.models import ClientSurvey, SurveyServiceLink, User, OrganizationNode
+
+async def get_filtered_surveys(
+    session: AsyncSession,
+    current_user: User,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    org_node_id: Optional[int] = None,
+    client_type: Optional[str] = None,
+    region: Optional[str] = None,
+    service_id: Optional[int] = None,
+):
+    stmt = select(ClientSurvey)
+    
+    # 1. Apply user level scoping (Unit scoping)
+    user_level_lower = current_user.user_level.lower() if current_user.user_level else ""
+    is_scoped = user_level_lower == "unit" and current_user.org_node_id is not None
+    
+    if is_scoped:
+        descendant_ids = await crud.get_node_descendants(session, current_user.org_node_id)
+        users_stmt = select(User.id).where(User.org_node_id.in_(list(descendant_ids)))
+        res_users = await session.execute(users_stmt)
+        scoped_user_ids = res_users.scalars().all()
+        stmt = stmt.where(ClientSurvey.evaluator_user_id.in_(scoped_user_ids))
+        
+    # 2. Optional Filters
+    if start_date:
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d")
+            stmt = stmt.where(ClientSurvey.created_on >= sd)
+        except ValueError:
+            pass
+            
+    if end_date:
+        try:
+            ed = datetime.strptime(end_date, "%Y-%m-%d")
+            ed = ed.replace(hour=23, minute=59, second=59, microsecond=999999)
+            stmt = stmt.where(ClientSurvey.created_on <= ed)
+        except ValueError:
+            pass
+            
+    if org_node_id:
+        descendant_ids = await crud.get_node_descendants(session, org_node_id)
+        users_stmt = select(User.id).where(User.org_node_id.in_(list(descendant_ids)))
+        res_users = await session.execute(users_stmt)
+        node_user_ids = res_users.scalars().all()
+        stmt = stmt.where(ClientSurvey.evaluator_user_id.in_(node_user_ids))
+        
+    if client_type:
+        stmt = stmt.where(ClientSurvey.client_type == client_type)
+        
+    if region:
+        stmt = stmt.where(ClientSurvey.region == region)
+        
+    if service_id:
+        stmt = stmt.join(SurveyServiceLink, SurveyServiceLink.survey_id == ClientSurvey.id).where(SurveyServiceLink.service_id == service_id)
+        
+    stmt = stmt.order_by(ClientSurvey.created_on.desc())
+    res = await session.execute(stmt)
+    return res.scalars().all()
+
+
+@router.get("/surveys/analytics", dependencies=[Depends(deps.allow_dashboard)])
+async def get_survey_analytics(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    org_node_id: Optional[int] = None,
+    client_type: Optional[str] = None,
+    region: Optional[str] = None,
+    service_id: Optional[int] = None,
+    current_user: User = Depends(deps.get_current_user),
+    session: AsyncSession = Depends(get_session)
+) -> Any:
+    surveys = await get_filtered_surveys(
+        session, current_user, start_date, end_date, org_node_id, client_type, region, service_id
+    )
+    
+    total = len(surveys)
+    
+    # Average rating
+    total_val = 0.0
+    total_count = 0
+    for s in surveys:
+        for field in ['sqd0', 'sqd1', 'sqd2', 'sqd3', 'sqd4', 'sqd5', 'sqd6', 'sqd7', 'sqd8']:
+            val = getattr(s, field)
+            if val and val > 0:
+                total_val += val
+                total_count += 1
+    avg_rating = round(total_val / total_count, 2) if total_count > 0 else 5.0
+    
+    # CSAT Score
+    csat_4_5_count = 0
+    csat_total_count = 0
+    for s in surveys:
+        val = s.sqd0
+        if val and val > 0:
+            csat_total_count += 1
+            if val >= 4:
+                csat_4_5_count += 1
+    csat_score = round(csat_4_5_count / csat_total_count * 100, 1) if csat_total_count > 0 else 100.0
+    
+    # NPS Sentiment
+    promoters = 0
+    passives = 0
+    detractors = 0
+    nps_total = 0
+    for s in surveys:
+        val = s.sqd0
+        if val and val > 0:
+            nps_total += 1
+            if val >= 4:
+                promoters += 1
+            elif val == 3:
+                passives += 1
+            else:
+                detractors += 1
+    promoter_pct = round(promoters / nps_total * 100, 1) if nps_total > 0 else 100.0
+    passive_pct = round(passives / nps_total * 100, 1) if nps_total > 0 else 0.0
+    detractor_pct = round(detractors / nps_total * 100, 1) if nps_total > 0 else 0.0
+    
+    # Demographics
+    sex_dist = {}
+    client_type_dist = {}
+    region_dist = {}
+    age_groups = {"Under 18": 0, "18-24": 0, "25-34": 0, "35-50": 0, "50+": 0}
+    
+    for s in surveys:
+        sex = s.sex or "Unknown"
+        sex_dist[sex] = sex_dist.get(sex, 0) + 1
+        
+        ct = s.client_type or "Unknown"
+        client_type_dist[ct] = client_type_dist.get(ct, 0) + 1
+        
+        reg = s.region or "Unknown"
+        region_dist[reg] = region_dist.get(reg, 0) + 1
+        
+        age = s.age
+        if age:
+            if age < 18:
+                age_groups["Under 18"] += 1
+            elif age <= 24:
+                age_groups["18-24"] += 1
+            elif age <= 34:
+                age_groups["25-34"] += 1
+            elif age <= 50:
+                age_groups["35-50"] += 1
+            else:
+                age_groups["50+"] += 1
+                
+    # Citizen Charter
+    cc1_dist = {"1": 0, "2": 0, "3": 0, "4": 0}
+    cc2_dist = {"1": 0, "2": 0, "3": 0, "4": 0}
+    cc3_dist = {"1": 0, "2": 0, "3": 0, "4": 0}
+    
+    for s in surveys:
+        if s.cc1 in cc1_dist:
+            cc1_dist[s.cc1] += 1
+        if s.cc2 in cc2_dist:
+            cc2_dist[s.cc2] += 1
+        if s.cc3 in cc3_dist:
+            cc3_dist[s.cc3] += 1
+            
+    # SQD Breakdown
+    sqd_breakdown = []
+    labels = [
+        "SQD0 - General Satisfaction",
+        "SQD1 - Responsiveness",
+        "SQD2 - Reliability",
+        "SQD3 - Access & Facilities",
+        "SQD4 - Communication",
+        "SQD5 - Costs",
+        "SQD6 - Integrity",
+        "SQD7 - Assurance",
+        "SQD8 - Outcome"
+    ]
+    for i in range(9):
+        field = f'sqd{i}'
+        field_vals = [getattr(s, field) for s in surveys if getattr(s, field) and getattr(s, field) > 0]
+        avg = round(sum(field_vals) / len(field_vals), 2) if field_vals else 5.0
+        pct = round((avg / 5.0) * 100, 1)
+        sqd_breakdown.append({
+            "label": labels[i],
+            "avg": avg,
+            "pct": pct
+        })
+        
+    # Timeline
+    timeline = {}
+    for s in surveys:
+        if s.created_on:
+            date_str = s.created_on.strftime("%Y-%m-%d")
+            timeline[date_str] = timeline.get(date_str, 0) + 1
+    sorted_timeline = {k: timeline[k] for k in sorted(timeline.keys())}
+    
+    # Suggestions
+    suggestions = []
+    for s in surveys:
+        if s.suggestions and s.suggestions.strip():
+            suggestions.append({
+                "id": s.id,
+                "created_on": s.created_on.strftime("%Y-%m-%d %H:%M:%S") if s.created_on else None,
+                "client_type": s.client_type,
+                "email": s.email or "N/A",
+                "suggestions": s.suggestions
+            })
+            
+    return {
+        "total_surveys": total,
+        "average_rating": avg_rating,
+        "csat_score": csat_score,
+        "nps_sentiment": {
+            "promoter_pct": promoter_pct,
+            "passive_pct": passive_pct,
+            "detractor_pct": detractor_pct
+        },
+        "demographics": {
+            "sex": sex_dist,
+            "client_type": client_type_dist,
+            "region": region_dist,
+            "age_groups": age_groups
+        },
+        "citizen_charter": {
+            "cc1": cc1_dist,
+            "cc2": cc2_dist,
+            "cc3": cc3_dist
+        },
+        "sqd_breakdown": sqd_breakdown,
+        "timeline_trend": sorted_timeline,
+        "suggestions": suggestions[:100]
+    }
+
+
+@router.get("/surveys/export", dependencies=[Depends(deps.allow_dashboard)])
+async def export_surveys_csv(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    org_node_id: Optional[int] = None,
+    client_type: Optional[str] = None,
+    region: Optional[str] = None,
+    service_id: Optional[int] = None,
+    current_user: User = Depends(deps.get_current_user),
+    session: AsyncSession = Depends(get_session)
+) -> StreamingResponse:
+    surveys = await get_filtered_surveys(
+        session, current_user, start_date, end_date, org_node_id, client_type, region, service_id
+    )
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow([
+        "Transaction ID", "Date Submitted", "Client Type", "Region", "Sex", "Age",
+        "CC1", "CC2", "CC3",
+        "SQD0 - General", "SQD1 - Responsiveness", "SQD2 - Reliability",
+        "SQD3 - Access", "SQD4 - Communication", "SQD5 - Costs",
+        "SQD6 - Integrity", "SQD7 - Assurance", "SQD8 - Outcome",
+        "Suggestions/Feedback", "Email", "Services Evaluated"
+    ])
+    
+    for s in surveys:
+        txs = s.transaction_types or {}
+        services_list = list(txs.values()) if isinstance(txs, dict) else []
+        services_str = ", ".join(services_list)
+        
+        writer.writerow([
+            s.transaction_id,
+            s.created_on.strftime("%Y-%m-%d %H:%M:%S") if s.created_on else "",
+            s.client_type,
+            s.region,
+            s.sex,
+            s.age,
+            s.cc1,
+            s.cc2,
+            s.cc3,
+            s.sqd0 or "",
+            s.sqd1 or "",
+            s.sqd2 or "",
+            s.sqd3 or "",
+            s.sqd4 or "",
+            s.sqd5 or "",
+            s.sqd6 or "",
+            s.sqd7 or "",
+            s.sqd8 or "",
+            s.suggestions or "",
+            s.email or "",
+            services_str
+        ])
+        
+    output.seek(0)
+    
+    response = StreamingResponse(iter([output.getvalue()]), media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=survey_responses.csv"
+    return response
