@@ -75,6 +75,10 @@ export default function PersonnelResponsesPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [questionsMap, setQuestionsMap] = useState<Record<string, string>>({});
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 20;
+
   const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
   const fetchFilterOptions = async (token: string) => {
@@ -186,6 +190,7 @@ export default function PersonnelResponsesPage() {
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchResponses();
   }, [selectedUserId, selectedServiceId, startDate, endDate]);
 
@@ -222,13 +227,40 @@ export default function PersonnelResponsesPage() {
     });
   };
 
+  const getPageNumbers = () => {
+    const totalItems = getSortedResponses().length;
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    const pages: (number | string)[] = [];
+    
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (currentPage > 3) {
+        pages.push("...");
+      }
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   const renderSortHeader = (label: string, field: string) => {
     const isActive = sortField === field;
     return (
       <th 
         scope="col" 
         onClick={() => handleSort(field)}
-        className="px-6 py-4 text-left cursor-pointer hover:bg-slate-100 select-none group transition-colors print:pointer-events-none print:hover:bg-transparent"
+        className="px-6 py-4 text-left cursor-pointer hover:bg-slate-100 select-none group transition-colors print:pointer-events-none print:hover:bg-transparent bg-slate-50 sticky top-0 z-10 border-b border-slate-200 shadow-[inset_0_-1px_0_rgba(226,232,240,1)]"
       >
         <div className="flex items-center gap-1">
           <span>{label}</span>
@@ -269,6 +301,11 @@ export default function PersonnelResponsesPage() {
   const handlePrint = () => {
     window.print();
   };
+
+  const totalItems = responses.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
 
   if (loading) {
     return (
@@ -441,22 +478,22 @@ export default function PersonnelResponsesPage() {
           {/* Table list of responses */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden print:border-none print:shadow-none">
             
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto relative">
               <table className="min-w-full divide-y divide-slate-200 text-xs font-semibold text-slate-650">
                 <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-wider print:bg-white print:text-slate-800">
                   <tr>
-                    <th scope="col" className="px-6 py-4 text-left">Transaction ID</th>
+                    <th scope="col" className="px-6 py-4 text-left bg-slate-50 sticky top-0 z-10 border-b border-slate-200 shadow-[inset_0_-1px_0_rgba(226,232,240,1)]">Transaction ID</th>
                     {renderSortHeader("Date Submitted", "created_on")}
                     {renderSortHeader("Client Type", "client_type")}
                     {renderSortHeader("Overall Score (SQD0)", "sqd0")}
-                    <th scope="col" className="px-6 py-4 text-left">SQD Breakdown (0-8)</th>
-                    <th scope="col" className="px-6 py-4 text-left">Services Availed</th>
-                    <th scope="col" className="px-6 py-4 text-center print:hidden">Details</th>
+                    <th scope="col" className="px-6 py-4 text-left bg-slate-50 sticky top-0 z-10 border-b border-slate-200 shadow-[inset_0_-1px_0_rgba(226,232,240,1)]">SQD Breakdown (0-8)</th>
+                    <th scope="col" className="px-6 py-4 text-left bg-slate-50 sticky top-0 z-10 border-b border-slate-200 shadow-[inset_0_-1px_0_rgba(226,232,240,1)]">Services Availed</th>
+                    <th scope="col" className="px-6 py-4 text-center print:hidden bg-slate-50 sticky top-0 z-10 border-b border-slate-200 shadow-[inset_0_-1px_0_rgba(226,232,240,1)]">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white print:divide-slate-200">
                   {responses.length > 0 ? (
-                    getSortedResponses().map((s) => {
+                    getSortedResponses().slice((currentPage - 1) * pageSize, currentPage * pageSize).map((s) => {
                       const dateStr = s.created_on 
                         ? new Date(s.created_on).toLocaleDateString()
                         : "N/A";
@@ -528,7 +565,7 @@ export default function PersonnelResponsesPage() {
                           {/* Row Expansion details panel */}
                           {isExpanded && (
                             <tr key={`${s.id}-details`} className="bg-slate-50/30 print:bg-transparent">
-                              <td colSpan={6} className="px-8 py-5 border-t border-b border-slate-200/50">
+                              <td colSpan={7} className="px-8 py-5 border-t border-b border-slate-200/50">
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                   
@@ -606,7 +643,7 @@ export default function PersonnelResponsesPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-semibold text-xs">
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-semibold text-xs">
                         No detailed survey responses found matching filters.
                       </td>
                     </tr>
@@ -614,6 +651,49 @@ export default function PersonnelResponsesPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+                <div className="text-slate-450">
+                  Showing {Math.min(startIndex + 1, totalItems)} to {Math.min(endIndex, totalItems)} of {totalItems} entries
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  
+                  {getPageNumbers().map((num, i) => (
+                    <button
+                      key={i}
+                      onClick={() => typeof num === "number" && setCurrentPage(num)}
+                      disabled={num === "..."}
+                      className={`px-3 py-1.5 rounded-xl border text-center min-w-[34px] transition-colors ${
+                        num === currentPage
+                          ? "bg-emerald-700 border-emerald-700 text-white font-bold"
+                          : num === "..."
+                          ? "border-transparent bg-transparent text-slate-400 cursor-default"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
 
           </div>
 

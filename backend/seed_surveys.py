@@ -50,8 +50,8 @@ async def seed_surveys():
         
         now = datetime.utcnow()
         
-        # Create 35 dummy surveys over the last 12 days
-        for i in range(35):
+        # Create 200 dummy surveys over the last 12 days
+        for i in range(200):
             days_ago = random.randint(0, 12)
             created_on = now - timedelta(days=days_ago, hours=random.randint(0, 23), minutes=random.randint(0, 59))
             
@@ -122,7 +122,7 @@ async def seed_surveys():
             session.add(survey)
             
         await session.commit()
-        print("=== 35 DUMMY SURVEYS SEEDED SUCCESSFULLY ===")
+        print("=== 200 DUMMY SURVEYS SEEDED SUCCESSFULLY ===")
 
 if __name__ == "__main__":
     asyncio.run(seed_surveys())
