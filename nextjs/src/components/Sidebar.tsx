@@ -49,20 +49,35 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
     fetchUser();
   }, [initialUserLevel]);
 
-  const links = [
-    { name: "Dashboard", href: "/", icon: PieChart, permission: null, roles: ["Super", "Admin", "Unit"] },
-    { name: "Analytics Insights", href: "/admin/analytics", icon: BarChart3, permission: "manage_users", roles: ["Super", "Admin"] },
-    { name: "Live Monitor", href: "/admin/monitor", icon: Activity, permission: "manage_users", roles: ["Super", "Admin"] },
-    { name: "Personnel Performance", href: "/admin/personnel-monitor", icon: UserCheck, permission: "manage_users", roles: ["Super", "Admin"] },
-    { name: "Detailed Responses", href: "/admin/personnel-responses", icon: FileSpreadsheet, permission: "manage_users", roles: ["Super", "Admin"] },
-    { name: "Org Tree Explorer", href: "/admin/org-tree", icon: FolderTree, permission: "manage_users", roles: ["Super", "Admin"] },
-    { name: "Service Catalog", href: "/admin/services", icon: Settings, permission: "manage_services", roles: ["Super", "Admin"] },
-    { name: "Survey Questions", href: "/admin/questions", icon: HelpCircle, permission: "manage_questions", roles: ["Super", "Admin"] },
-    { name: "User Management", href: "/admin/users", icon: Users, permission: "manage_users", roles: ["Super", "Admin"] },
-    { name: "Roles & Permissions", href: "/admin/roles-permissions", icon: Shield, permission: "manage_users", roles: ["Super", "Admin"] },
-    { name: "Survey Dropdowns", href: "/admin/metadata", icon: BookOpen, permission: "manage_metadata", roles: ["Super", "Admin"] },
-    { name: "Audit Logs", href: "/admin/audit-logs", icon: ClipboardList, permission: "view_audit_logs", roles: ["Super", "Admin"] },
-    { name: "My Profile", href: "/admin/profile", icon: User, permission: null, roles: ["Super", "Admin", "Unit"] },
+  const menuGroups = [
+    {
+      title: "Performance & Insights",
+      links: [
+        { name: "Dashboard", href: "/", icon: PieChart, permission: null, roles: ["Super", "Admin", "Unit"] },
+        { name: "Analytics Insights", href: "/admin/analytics", icon: BarChart3, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Live Monitor", href: "/admin/monitor", icon: Activity, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Personnel Performance", href: "/admin/personnel-monitor", icon: UserCheck, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Detailed Responses", href: "/admin/personnel-responses", icon: FileSpreadsheet, permission: "manage_users", roles: ["Super", "Admin"] },
+      ]
+    },
+    {
+      title: "Administration",
+      links: [
+        { name: "User Management", href: "/admin/users", icon: Users, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Roles & Permissions", href: "/admin/roles-permissions", icon: Shield, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Org Tree Explorer", href: "/admin/org-tree", icon: FolderTree, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Service Catalog", href: "/admin/services", icon: Settings, permission: "manage_services", roles: ["Super", "Admin"] },
+        { name: "Survey Questions", href: "/admin/questions", icon: HelpCircle, permission: "manage_questions", roles: ["Super", "Admin"] },
+        { name: "Survey Dropdowns", href: "/admin/metadata", icon: BookOpen, permission: "manage_metadata", roles: ["Super", "Admin"] },
+      ]
+    },
+    {
+      title: "Account & Logs",
+      links: [
+        { name: "Audit Logs", href: "/admin/audit-logs", icon: ClipboardList, permission: "view_audit_logs", roles: ["Super", "Admin"] },
+        { name: "My Profile", href: "/admin/profile", icon: User, permission: null, roles: ["Super", "Admin", "Unit"] },
+      ]
+    }
   ];
 
   const handleLogout = () => {
@@ -77,28 +92,47 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
         <div className="text-xs text-white/60 mt-1">Satisfaction Monitoring</div>
       </div>
 
-      <nav className="flex-1 space-y-2">
-        {links.map((link) => {
+      <nav className="flex-1 space-y-4 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        {menuGroups.map((group, groupIdx) => {
           const isSuper = userLevel?.toLowerCase() === "super";
-          const hasAccess = isSuper || !link.permission || permissions.includes(link.permission) || link.roles.map(r => r.toLowerCase()).includes(userLevel?.toLowerCase());
-          if (!hasAccess) return null;
+          const accessibleLinks = group.links.filter((link) => {
+            return (
+              isSuper ||
+              !link.permission ||
+              permissions.includes(link.permission) ||
+              link.roles.map((r) => r.toLowerCase()).includes(userLevel?.toLowerCase())
+            );
+          });
 
-          const Icon = link.icon;
-          const isActive = pathname === link.href;
+          if (accessibleLinks.length === 0) return null;
 
           return (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
-                isActive 
-                  ? "bg-white/10 text-gold-500 font-semibold" 
-                  : "text-emerald-100 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <Icon size={18} className={isActive ? "text-gold-500" : "text-emerald-300"} />
-              {link.name}
-            </Link>
+            <div key={groupIdx} className="space-y-1">
+              <div className="text-[10px] font-black text-emerald-200/50 uppercase tracking-widest px-4 py-1 select-none">
+                {group.title}
+              </div>
+              <div className="space-y-0.5">
+                {accessibleLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
+
+                  return (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-white/10 text-gold-400 font-bold shadow-sm"
+                          : "text-emerald-100 hover:bg-white/5 hover:text-gold-300"
+                      }`}
+                    >
+                      <Icon size={16} className={isActive ? "text-gold-400" : "text-emerald-300"} />
+                      <span>{link.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>
