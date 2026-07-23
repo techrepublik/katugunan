@@ -555,7 +555,7 @@ export default function AnalyticsPage() {
                           plugins: {
                             legend: {
                               position: 'bottom',
-                              labels: { boxWidth: 10, fontSize: 10 }
+                              labels: { boxWidth: 10, font: { size: 10 } }
                             }
                           }
                         }} 

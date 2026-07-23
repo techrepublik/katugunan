@@ -27,7 +27,8 @@ import {
   MessageSquare,
   Sparkles,
   ShieldAlert,
-  FolderOpen
+  FolderOpen,
+  ChevronDown
 } from "lucide-react";
 
 ChartJS.register(
@@ -213,7 +214,13 @@ export default function PersonnelMonitorPage() {
   // Helper to filter options list based on scope type
   const getTargetOptions = () => {
     if (scopeType === "individual") {
-      return usersList.map(u => ({ id: u.id, name: `${u.first_name || ""} ${u.last_name || ""} (${u.username})` }));
+      return usersList.map(u => {
+        const displayName = `${u.first_name || ""} ${u.last_name || ""}`.trim();
+        return {
+          id: u.id,
+          name: displayName ? `${displayName} (${u.username})` : u.username
+        };
+      });
     }
     if (scopeType === "department") {
       return nodesList.filter(n => n.node_type === "DEPARTMENT").map(n => ({ id: n.id, name: n.name }));

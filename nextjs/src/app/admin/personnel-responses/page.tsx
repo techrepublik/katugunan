@@ -373,7 +373,9 @@ export default function PersonnelResponsesPage() {
                     const selected = usersList.find(u => u.id.toString() === selectedUserId);
                     if (!selected) return "-- Select Personnel --";
                     const rating = personnelRatings[selectedUserId];
-                    return `${selected.first_name || ""} ${selected.last_name || ""} (${rating ? `★ ${rating.toFixed(2)}` : "No ratings"})`;
+                    const displayName = `${selected.first_name || ""} ${selected.last_name || ""}`.trim();
+                    const nameToDisplay = displayName ? `${displayName} (${selected.username})` : selected.username;
+                    return `${nameToDisplay} (${rating ? `★ ${rating.toFixed(2)}` : "No ratings"})`;
                   })() : "-- Select Personnel --"}
                 </span>
                 <ChevronDown size={14} className="text-slate-400 flex-shrink-0" />
@@ -395,6 +397,8 @@ export default function PersonnelResponsesPage() {
                       return nameStr.includes(searchQuery.toLowerCase());
                     }).map(u => {
                       const rating = personnelRatings[u.id.toString()];
+                      const displayName = `${u.first_name || ""} ${u.last_name || ""}`.trim();
+                      const nameToDisplay = displayName ? `${displayName} (${u.username})` : u.username;
                       return (
                         <button
                           key={u.id}
@@ -406,7 +410,7 @@ export default function PersonnelResponsesPage() {
                           }}
                           className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-semibold flex items-center justify-between hover:bg-slate-50 ${u.id.toString() === selectedUserId ? "bg-emerald-50 text-emerald-800" : "text-slate-700"}`}
                         >
-                          <span className="truncate max-w-[170px]">{u.first_name || ""} {u.last_name || ""}</span>
+                          <span className="truncate max-w-[170px]">{nameToDisplay}</span>
                           <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${rating ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"}`}>
                             {rating ? `★ ${rating.toFixed(2)}` : "No rating"}
                           </span>
