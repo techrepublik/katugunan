@@ -41,6 +41,11 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-900 to-emerald-700 font-sans p-4">
       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-100 border-t-8 border-gold-500">
+        <img 
+          src="/logo.png" 
+          alt="Katugunan Logo" 
+          className="w-20 h-20 mx-auto mb-4 object-contain rounded-full bg-white/95 p-1.5 shadow-md border border-slate-100" 
+        />
         <h2 className="text-2xl font-bold text-center text-emerald-900 mb-2">University of Southern Mindanao</h2>
         <p className="text-center text-slate-500 text-sm mb-6">Client Satisfaction Survey Portal</p>
         

@@ -88,6 +88,11 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
   return (
     <aside className="w-64 bg-emerald-700 text-white min-h-screen flex flex-col p-6 shadow-xl border-r-4 border-gold-500">
       <div className="text-center mb-8 pb-4 border-b border-white/20">
+        <img 
+          src="/logo.png" 
+          alt="Katugunan Logo" 
+          className="w-16 h-16 mx-auto mb-3 object-contain rounded-full bg-white/95 p-1.5 shadow-md border border-white/10" 
+        />
         <div className="font-bold text-lg tracking-wider text-gold-400">USM KATUGUNAN</div>
         <div className="text-xs text-white/60 mt-1">Satisfaction Monitoring</div>
       </div>
