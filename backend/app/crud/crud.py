@@ -133,8 +133,19 @@ async def get_user_by_email(session: AsyncSession, email: str) -> Optional[User]
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
-async def get_users(session: AsyncSession) -> List[User]:
+async def get_users(session: AsyncSession, current_user: Optional[User] = None) -> List[User]:
     stmt = select(User)
+    if current_user and current_user.user_level not in ["Super", "Admin"]:
+        if current_user.org_node_id:
+            descendant_nodes = await get_node_descendants(session, current_user.org_node_id)
+            stmt = stmt.where(
+                or_(
+                    User.org_node_id.in_(descendant_nodes),
+                    User.id == current_user.id
+                )
+            )
+        else:
+            stmt = stmt.where(User.id == current_user.id)
     res = await session.execute(stmt)
     return res.scalars().all()
 

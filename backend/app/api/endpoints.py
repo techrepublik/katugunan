@@ -320,9 +320,10 @@ async def create_user_route(
 
 @router.get("/users", response_model=List[schemas.UserOut], dependencies=[Depends(deps.has_any_permission(["manage_users", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"]))])
 async def read_users(
+    current_user: User = Depends(deps.get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Any:
-    return await crud.get_users(session)
+    return await crud.get_users(session, current_user=current_user)
 
 @router.get("/users/public/{identifier}", response_model=schemas.UserOut)
 async def read_user_public(
@@ -1124,24 +1125,32 @@ async def get_personnel_stats(
             if not evaluator_ids:
                 evaluator_ids = [-9999]
                 
-    # Apply Unit level coordinator restrictions
-    if current_user.user_level == "Unit":
+    # Apply hierarchy coordinator restrictions for all roles aside from Super and Admin
+    if current_user.user_level not in ["Super", "Admin"]:
         if current_user.org_node_id:
-            unit_nodes = await get_descendant_ids(current_user.org_node_id)
-            q_unit_users = select(User.id).where(User.org_node_id.in_(unit_nodes))
-            res_unit_users = await session.execute(q_unit_users)
-            unit_users_list = list(res_unit_users.scalars().all())
+            allowed_nodes = await get_descendant_ids(current_user.org_node_id)
+            q_allowed_users = select(User.id).where(User.org_node_id.in_(allowed_nodes))
+            res_allowed_users = await session.execute(q_allowed_users)
+            allowed_users_list = list(res_allowed_users.scalars().all())
             
             if scope_type == "all":
-                evaluator_ids = unit_users_list
+                evaluator_ids = allowed_users_list
             else:
-                evaluator_ids = [uid for uid in evaluator_ids if uid in unit_users_list]
+                evaluator_ids = [uid for uid in evaluator_ids if uid in allowed_users_list]
+                if not evaluator_ids:
+                    evaluator_ids = [-9999]
+        else:
+            # If not assigned to any node, they can't see anyone (or only themselves)
+            if scope_type == "all":
+                evaluator_ids = [current_user.id]
+            else:
+                evaluator_ids = [uid for uid in evaluator_ids if uid == current_user.id]
                 if not evaluator_ids:
                     evaluator_ids = [-9999]
 
     # 2. Fetch surveys
     query = select(ClientSurvey)
-    if scope_type != "all" or current_user.user_level == "Unit":
+    if scope_type != "all" or current_user.user_level not in ["Super", "Admin"]:
         query = query.where(ClientSurvey.evaluator_user_id.in_(evaluator_ids))
         
     res = await session.execute(query)
@@ -1346,13 +1355,13 @@ async def get_personnel_responses(
     current_user: User = Depends(deps.get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Any:
-    # 1. Verify Unit level coordinator bounds
-    if current_user.user_level == "Unit":
+    # 1. Verify coordinator bounds for non-Super/Admin roles
+    if current_user.user_level not in ["Super", "Admin"]:
         if current_user.org_node_id:
-            # Find unit descendants recursively
-            unit_node = current_user.org_node_id
-            descendant_nodes = [unit_node]
-            to_check = [unit_node]
+            # Find descendants recursively
+            start_node = current_user.org_node_id
+            descendant_nodes = [start_node]
+            to_check = [start_node]
             for _ in range(8):
                 if not to_check:
                     break
@@ -1368,10 +1377,11 @@ async def get_personnel_responses(
             q_val = select(User.id).where(User.id == evaluator_user_id).where(User.org_node_id.in_(descendant_nodes))
             res_val = await session.execute(q_val)
             is_valid = res_val.scalar_one_or_none()
-            if not is_valid:
+            if not is_valid and evaluator_user_id != current_user.id:
                 raise HTTPException(status_code=403, detail="Not authorized to view responses for this personnel.")
         else:
-            raise HTTPException(status_code=403, detail="Unit coordinator not linked to any organizational node.")
+            if evaluator_user_id != current_user.id:
+                raise HTTPException(status_code=403, detail="Coordinator not linked to any organizational node.")
 
     # 2. Build Query
     query = select(ClientSurvey).where(ClientSurvey.evaluator_user_id == evaluator_user_id)
