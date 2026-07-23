@@ -129,6 +129,25 @@ async def create_org_node_route(
     session: AsyncSession = Depends(get_session)
 ) -> Any:
     db_node = await crud.create_org_node(session, node_in)
+    
+    # Synchronize bidirectional relationship
+    if db_node.assigned_user_id:
+        other_nodes = await session.execute(
+            select(OrganizationNode)
+            .where(OrganizationNode.assigned_user_id == db_node.assigned_user_id)
+            .where(OrganizationNode.id != db_node.id)
+        )
+        for node in other_nodes.scalars().all():
+            node.assigned_user_id = None
+            session.add(node)
+            
+        new_user = await session.get(User, db_node.assigned_user_id)
+        if new_user:
+            new_user.org_node_id = db_node.id
+            session.add(new_user)
+        await session.commit()
+        await session.refresh(db_node)
+        
     await crud.create_audit_log(session, current_user.username, "CREATE_ORG_NODE", f"Created organizational node: {db_node.name} ({db_node.node_type})")
     return db_node
 
@@ -162,11 +181,36 @@ async def update_org_node(
     if not db_node:
         raise HTTPException(status_code=404, detail="Node not found")
         
+    old_assigned_user_id = db_node.assigned_user_id
     node_data = node_in.model_dump(exclude_unset=True)
     for key, value in node_data.items():
         setattr(db_node, key, value)
         
     session.add(db_node)
+    
+    # Synchronize bidirectional relationship
+    if "assigned_user_id" in node_data and old_assigned_user_id != db_node.assigned_user_id:
+        if old_assigned_user_id:
+            old_user = await session.get(User, old_assigned_user_id)
+            if old_user and old_user.org_node_id == db_node.id:
+                old_user.org_node_id = None
+                session.add(old_user)
+        
+        if db_node.assigned_user_id:
+            other_nodes = await session.execute(
+                select(OrganizationNode)
+                .where(OrganizationNode.assigned_user_id == db_node.assigned_user_id)
+                .where(OrganizationNode.id != db_node.id)
+            )
+            for node in other_nodes.scalars().all():
+                node.assigned_user_id = None
+                session.add(node)
+                
+            new_user = await session.get(User, db_node.assigned_user_id)
+            if new_user:
+                new_user.org_node_id = db_node.id
+                session.add(new_user)
+
     await session.commit()
     await session.refresh(db_node)
     await crud.create_audit_log(session, current_user.username, "UPDATE_ORG_NODE", f"Updated organizational node: {db_node.name}")
@@ -317,6 +361,21 @@ async def create_user_route(
     await session.commit()
     await session.refresh(db_user)
     
+    # Synchronize bidirectional relationship
+    if db_user.org_node_id:
+        from app.models.models import OrganizationNode
+        node = await session.get(OrganizationNode, db_user.org_node_id)
+        if node:
+            if node.assigned_user_id and node.assigned_user_id != db_user.id:
+                prev_user = await session.get(User, node.assigned_user_id)
+                if prev_user and prev_user.org_node_id == db_user.org_node_id:
+                    prev_user.org_node_id = None
+                    session.add(prev_user)
+            node.assigned_user_id = db_user.id
+            session.add(node)
+            await session.commit()
+            await session.refresh(db_user)
+    
     await crud.create_audit_log(
         session, 
         current_user.username, 
@@ -400,6 +459,7 @@ async def update_user_admin(
     if curr_level == "admin" and db_level == "super":
         raise HTTPException(status_code=403, detail="Admin level users cannot modify Super level accounts")
         
+    old_node_id = db_user.org_node_id
     if user_in.email is not None:
         db_user.email = user_in.email
     if user_in.first_name is not None:
@@ -439,6 +499,39 @@ async def update_user_admin(
         db_user.hashed_password = get_password_hash(user_in.password)
         
     session.add(db_user)
+    
+    # Synchronize bidirectional relationship
+    if user_in.org_node_id is not None and old_node_id != user_in.org_node_id:
+        from app.models.models import OrganizationNode
+        # Clear the old node's assigned user if it was this user
+        if old_node_id:
+            old_node = await session.get(OrganizationNode, old_node_id)
+            if old_node and old_node.assigned_user_id == db_user.id:
+                old_node.assigned_user_id = None
+                session.add(old_node)
+        
+        # Clear any other node assigned to this user
+        other_nodes = await session.execute(
+            select(OrganizationNode)
+            .where(OrganizationNode.assigned_user_id == db_user.id)
+            .where(OrganizationNode.id != user_in.org_node_id)
+        )
+        for node in other_nodes.scalars().all():
+            node.assigned_user_id = None
+            session.add(node)
+            
+        # Set the new node's assigned user
+        if user_in.org_node_id:
+            new_node = await session.get(OrganizationNode, user_in.org_node_id)
+            if new_node:
+                if new_node.assigned_user_id and new_node.assigned_user_id != db_user.id:
+                    prev_assigned_user = await session.get(User, new_node.assigned_user_id)
+                    if prev_assigned_user and prev_assigned_user.org_node_id == user_in.org_node_id:
+                        prev_assigned_user.org_node_id = None
+                        session.add(prev_assigned_user)
+                new_node.assigned_user_id = db_user.id
+                session.add(new_node)
+                
     await session.commit()
     await session.refresh(db_user)
     
