@@ -12,7 +12,7 @@ from app.core.db import get_session
 from app.core.security import create_access_token, verify_password, get_password_hash
 from app.api import deps
 from app.crud import crud
-from app.models.models import User, UserLevel, NodeType, OrganizationNode, ClientType, Region
+from app.models.models import User, UserLevel, NodeType, OrganizationNode, ClientType, Region, Role
 from app.schemas import schemas
 
 router = APIRouter()
@@ -144,6 +144,12 @@ async def create_org_node_route(
         new_user = await session.get(User, db_node.assigned_user_id)
         if new_user:
             new_user.org_node_id = db_node.id
+            role_title = db_node.node_type.title() if db_node.node_type else ""
+            if role_title in ["Branch", "Unit", "Department", "Position", "Lab"]:
+                new_user.user_level = role_title
+                role_db = (await session.exec(select(Role).where(Role.name == role_title))).first()
+                if role_db:
+                    new_user.permissions = role_db.permissions
             session.add(new_user)
         await session.commit()
         await session.refresh(db_node)
@@ -209,6 +215,12 @@ async def update_org_node(
             new_user = await session.get(User, db_node.assigned_user_id)
             if new_user:
                 new_user.org_node_id = db_node.id
+                role_title = db_node.node_type.title() if db_node.node_type else ""
+                if role_title in ["Branch", "Unit", "Department", "Position", "Lab"]:
+                    new_user.user_level = role_title
+                    role_db = (await session.exec(select(Role).where(Role.name == role_title))).first()
+                    if role_db:
+                        new_user.permissions = role_db.permissions
                 session.add(new_user)
 
     await session.commit()
