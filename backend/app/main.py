@@ -96,7 +96,18 @@ async def on_startup():
                 "manage_services", "manage_questions", "manage_metadata", "view_audit_logs",
                 "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
             ]},
-            {"name": "Unit", "description": "Standard personnel account with view dashboard access", "permissions": []},
+            {"name": "Branch", "description": "Branch-level satisfaction monitor and dashboard viewer", "permissions": [
+                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
+            ]},
+            {"name": "Unit", "description": "Unit-level satisfaction monitor and dashboard viewer", "permissions": [
+                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
+            ]},
+            {"name": "Department", "description": "Department-level satisfaction monitor and dashboard viewer", "permissions": [
+                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
+            ]},
+            {"name": "Position", "description": "Position-level satisfaction monitor and dashboard viewer", "permissions": [
+                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
+            ]},
             {"name": "Client", "description": "End-user / Client account for filling out surveys", "permissions": []}
         ]
         for r_data in default_roles:
@@ -108,7 +119,6 @@ async def on_startup():
                 new_perms = list(set(role_db.permissions or []) | set(r_data["permissions"]))
                 role_db.permissions = new_perms
                 session.add(role_db)
-
         await session.commit()
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

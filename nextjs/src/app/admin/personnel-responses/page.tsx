@@ -90,7 +90,7 @@ export default function PersonnelResponsesPage() {
       if (usersRes.ok) {
         const usersData = await usersRes.json();
         const evaluators = usersData.filter((u: any) => 
-          u.user_level === "Super" || u.user_level === "Admin" || u.user_level === "Unit"
+          u.user_level !== "Client"
         );
         setUsersList(evaluators);
         if (evaluators.length > 0) {

@@ -14,7 +14,10 @@ class NodeType(str, Enum):
 class UserLevel(str, Enum):
     SUPER = "Super"
     ADMIN = "Admin"
+    BRANCH = "Branch"
     UNIT = "Unit"
+    DEPARTMENT = "Department"
+    POSITION = "Position"
     CLIENT = "Client"
 
 class OrganizationNode(SQLModel, table=True):

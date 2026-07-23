@@ -660,7 +660,10 @@ export default function UsersPage() {
                       <>
                         {currentUser?.user_level?.toLowerCase() === "super" && <option value="Super">Super</option>}
                         <option value="Admin">Admin</option>
+                        <option value="Branch">Branch</option>
                         <option value="Unit">Unit</option>
+                        <option value="Department">Department</option>
+                        <option value="Position">Position</option>
                         <option value="Client">Client</option>
                       </>
                     )}

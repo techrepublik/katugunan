@@ -23,7 +23,7 @@ async def seed_surveys():
             print("No services found to link surveys to. Please seed services first.")
             return
 
-        evaluator_ids = [u.id for u in users if u.user_level in ["Super", "Admin", "Unit"]]
+        evaluator_ids = [u.id for u in users if u.user_level != "Client"]
         if not evaluator_ids:
             evaluator_ids = [users[0].id]
             

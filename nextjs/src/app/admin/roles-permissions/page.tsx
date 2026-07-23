@@ -133,7 +133,7 @@ export default function RolesPermissionsPage() {
   };
 
   const handleDeleteRole = async (id: number, name: string) => {
-    if (["Super", "Admin", "Unit", "Client"].includes(name)) {
+    if (["Super", "Admin", "Branch", "Unit", "Department", "Position", "Client"].includes(name)) {
       showToast("System default roles cannot be deleted.", "error");
       return;
     }
@@ -360,7 +360,7 @@ export default function RolesPermissionsPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {roles.map((role) => {
-                      const isDefault = ["Super", "Admin", "Unit", "Client"].includes(role.name);
+                      const isDefault = ["Super", "Admin", "Branch", "Unit", "Department", "Position", "Client"].includes(role.name);
                       return (
                         <tr key={role.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -500,7 +500,7 @@ export default function RolesPermissionsPage() {
                 <input
                   type="text"
                   required
-                  disabled={editMode && ["Super", "Admin", "Unit", "Client"].includes(roleName)}
+                  disabled={editMode && ["Super", "Admin", "Branch", "Unit", "Department", "Position", "Client"].includes(roleName)}
                   value={roleName}
                   onChange={(e) => setRoleName(e.target.value)}
                   placeholder="e.g. SurveySupervisor"

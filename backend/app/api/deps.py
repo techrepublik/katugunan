@@ -54,7 +54,14 @@ class RoleChecker:
 allow_admin = RoleChecker([UserLevel.SUPER, UserLevel.ADMIN])
 
 # Super/Admin/Unit dashboard permission guard
-allow_dashboard = RoleChecker([UserLevel.SUPER, UserLevel.ADMIN, UserLevel.UNIT])
+allow_dashboard = RoleChecker([
+    UserLevel.SUPER, 
+    UserLevel.ADMIN, 
+    UserLevel.BRANCH, 
+    UserLevel.UNIT, 
+    UserLevel.DEPARTMENT, 
+    UserLevel.POSITION
+])
 
 class PermissionChecker:
     def __init__(self, required_permission: str):
