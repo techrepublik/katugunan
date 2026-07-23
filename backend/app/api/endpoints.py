@@ -318,7 +318,7 @@ async def create_user_route(
     )
     return db_user
 
-@router.get("/users", response_model=List[schemas.UserOut], dependencies=[Depends(deps.has_permission("manage_users"))])
+@router.get("/users", response_model=List[schemas.UserOut], dependencies=[Depends(deps.has_any_permission(["manage_users", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"]))])
 async def read_users(
     session: AsyncSession = Depends(get_session)
 ) -> Any:
