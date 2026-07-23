@@ -87,6 +87,13 @@ async def on_startup():
                 session.add(Permission(**p))
 
         # Seed/Ensure default roles exist and have defaults bound
+        from app.models.models import OrganizationNode
+        
+        # 1. Fetch distinct node types from database
+        node_types_res = await session.exec(select(OrganizationNode.node_type).distinct())
+        distinct_types = node_types_res.all()
+        
+        # 2. Base default roles
         default_roles = [
             {"name": "Super", "description": "Super Administrator with complete system access", "permissions": [
                 "manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs",
@@ -96,20 +103,23 @@ async def on_startup():
                 "manage_services", "manage_questions", "manage_metadata", "view_audit_logs",
                 "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
             ]},
-            {"name": "Branch", "description": "Branch-level satisfaction monitor and dashboard viewer", "permissions": [
-                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
-            ]},
-            {"name": "Unit", "description": "Unit-level satisfaction monitor and dashboard viewer", "permissions": [
-                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
-            ]},
-            {"name": "Department", "description": "Department-level satisfaction monitor and dashboard viewer", "permissions": [
-                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
-            ]},
-            {"name": "Position", "description": "Position-level satisfaction monitor and dashboard viewer", "permissions": [
-                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
-            ]},
             {"name": "Client", "description": "End-user / Client account for filling out surveys", "permissions": []}
         ]
+        
+        # 3. Dynamically append roles for distinct node types
+        for nt in distinct_types:
+            if not nt:
+                continue
+            role_name = nt.title()
+            if role_name not in ["Super", "Admin", "Client"]:
+                default_roles.append({
+                    "name": role_name,
+                    "description": f"{role_name}-level satisfaction monitor and dashboard viewer",
+                    "permissions": [
+                        "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
+                    ]
+                })
+
         for r_data in default_roles:
             role_db = (await session.exec(select(Role).where(Role.name == r_data["name"]))).first()
             if not role_db:
@@ -119,6 +129,7 @@ async def on_startup():
                 new_perms = list(set(role_db.permissions or []) | set(r_data["permissions"]))
                 role_db.permissions = new_perms
                 session.add(role_db)
+
         await session.commit()
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

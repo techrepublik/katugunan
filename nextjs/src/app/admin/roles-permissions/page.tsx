@@ -25,6 +25,7 @@ export default function RolesPermissionsPage() {
   const [activeTab, setActiveTab] = useState<"roles" | "permissions">("roles");
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [nodeTypes, setNodeTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -62,9 +63,16 @@ export default function RolesPermissionsPage() {
 
       const rolesRes = await fetch(`${apiBase}/roles`, { headers });
       const permsRes = await fetch(`${apiBase}/permissions`, { headers });
+      const nodesRes = await fetch(`${apiBase}/org-nodes`, { headers });
 
       if (rolesRes.ok) setRoles(await rolesRes.json());
       if (permsRes.ok) setPermissions(await permsRes.json());
+      if (nodesRes.ok) {
+        const nodesData = await nodesRes.json();
+        const types = Array.from(new Set(nodesData.map((n: any) => n.node_type.toLowerCase())))
+          .map((t: any) => t.charAt(0).toUpperCase() + t.slice(1));
+        setNodeTypes(types);
+      }
     } catch (err) {
       console.error(err);
       showToast("Failed to fetch roles and permissions configuration.", "error");
@@ -132,8 +140,12 @@ export default function RolesPermissionsPage() {
     }
   };
 
+  const isDefaultRole = (name: string) => {
+    return ["Super", "Admin", "Client", ...nodeTypes].includes(name);
+  };
+
   const handleDeleteRole = async (id: number, name: string) => {
-    if (["Super", "Admin", "Branch", "Unit", "Department", "Position", "Client"].includes(name)) {
+    if (isDefaultRole(name)) {
       showToast("System default roles cannot be deleted.", "error");
       return;
     }
@@ -360,7 +372,7 @@ export default function RolesPermissionsPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {roles.map((role) => {
-                      const isDefault = ["Super", "Admin", "Branch", "Unit", "Department", "Position", "Client"].includes(role.name);
+                      const isDefault = isDefaultRole(role.name);
                       return (
                         <tr key={role.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -500,7 +512,7 @@ export default function RolesPermissionsPage() {
                 <input
                   type="text"
                   required
-                  disabled={editMode && ["Super", "Admin", "Branch", "Unit", "Department", "Position", "Client"].includes(roleName)}
+                  disabled={editMode && isDefaultRole(roleName)}
                   value={roleName}
                   onChange={(e) => setRoleName(e.target.value)}
                   placeholder="e.g. SurveySupervisor"

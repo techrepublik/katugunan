@@ -664,6 +664,7 @@ export default function UsersPage() {
                         <option value="Unit">Unit</option>
                         <option value="Department">Department</option>
                         <option value="Position">Position</option>
+                        <option value="Lab">Lab</option>
                         <option value="Client">Client</option>
                       </>
                     )}
