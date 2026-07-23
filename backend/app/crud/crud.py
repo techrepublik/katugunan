@@ -240,7 +240,7 @@ async def get_surveys(session: AsyncSession, scoped_user_id: Optional[int] = Non
 
 async def get_dashboard_stats(session: AsyncSession, user: User) -> dict:
     # Set default scoping
-    is_scoped = user.user_level == UserLevel.UNIT and user.org_node_id is not None
+    is_scoped = user.user_level not in [UserLevel.SUPER, UserLevel.ADMIN] and user.org_node_id is not None
     descendant_ids = set()
     scoped_user_ids = []
     

@@ -917,9 +917,9 @@ async def get_filtered_surveys(
 ):
     stmt = select(ClientSurvey)
     
-    # 1. Apply user level scoping (Unit scoping)
+    # 1. Apply user level scoping
     user_level_lower = current_user.user_level.lower() if current_user.user_level else ""
-    is_scoped = user_level_lower == "unit" and current_user.org_node_id is not None
+    is_scoped = user_level_lower not in ["super", "admin"] and current_user.org_node_id is not None
     
     if is_scoped:
         descendant_ids = await crud.get_node_descendants(session, current_user.org_node_id)
