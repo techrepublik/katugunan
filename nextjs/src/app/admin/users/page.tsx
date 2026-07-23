@@ -36,10 +36,16 @@ interface OrgNode {
 
 const ALL_PERMISSIONS = [
   { id: "manage_users", label: "Manage Users", desc: "Allows creating, updating, and deleting system accounts" },
+  { id: "manage_roles", label: "Manage Roles & Permissions", desc: "Allows managing access roles and system permission scopes" },
   { id: "manage_services", label: "Manage Services", desc: "Allows modification of service catalog configurations" },
   { id: "manage_questions", label: "Manage Questions", desc: "Allows editing survey evaluation questions" },
   { id: "manage_metadata", label: "Manage Metadata", desc: "Allows editing region and client type dropdown options" },
-  { id: "view_audit_logs", label: "View Audit Logs", desc: "Allows viewing database-level action tracking logs" }
+  { id: "view_audit_logs", label: "View Audit Logs", desc: "Allows viewing database-level action tracking logs" },
+  { id: "view_analytics", label: "View Analytics Insights", desc: "Allows viewing the survey analytics insights page" },
+  { id: "view_monitor", label: "View Live Monitor", desc: "Allows viewing the live satisfaction monitor page" },
+  { id: "view_personnel_monitor", label: "View Personnel Performance", desc: "Allows viewing the personnel performance monitoring page" },
+  { id: "view_personnel_responses", label: "View Detailed Responses", desc: "Allows viewing the detailed survey responses ledger" },
+  { id: "view_org_tree", label: "View Org Tree Explorer", desc: "Allows viewing the organizational hierarchy tree page" }
 ];
 
 export default function UsersPage() {
@@ -771,10 +777,13 @@ export default function UsersPage() {
 
               {/* RBAC Permissions Section */}
               <div className="pt-4 border-t border-slate-100">
-                <h4 className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-1 flex items-center gap-1.5">
                   <Shield size={14} className="text-emerald-700" />
                   Grant Custom RBAC Permissions
                 </h4>
+                <p className="text-[10px] text-slate-400 mb-3 leading-relaxed">
+                  Default permissions for the selected User Level are auto-selected. You can check additional permissions below to assign them directly to this user as custom overrides.
+                </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {allPermissions.map(p => {

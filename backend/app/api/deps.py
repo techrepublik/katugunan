@@ -88,3 +88,32 @@ class PermissionChecker:
 
 def has_permission(permission_name: str) -> PermissionChecker:
     return PermissionChecker(permission_name)
+
+class AnyPermissionChecker:
+    def __init__(self, permissions: list[str]):
+        self.permissions = permissions
+
+    async def __call__(self, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)) -> User:
+        user_role = user.user_level.lower() if user.user_level else ""
+        if user_role == "super":
+            return user
+            
+        role_permissions = []
+        if user.user_level:
+            from app.models.models import Role
+            from sqlmodel import select
+            res = await session.execute(select(Role).where(text("LOWER(name) = :name")).params(name=user_role))
+            role = res.scalar_one_or_none()
+            if role and role.permissions:
+                role_permissions = role.permissions
+                
+        user_perms = set(role_permissions) | set(user.permissions or [])
+        if not any(p in user_perms for p in self.permissions):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"The user doesn't have any of the required permissions: {self.permissions}"
+            )
+        return user
+
+def has_any_permission(permission_names: list[str]) -> AnyPermissionChecker:
+    return AnyPermissionChecker(permission_names)

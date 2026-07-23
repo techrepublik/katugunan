@@ -67,30 +67,47 @@ async def on_startup():
             for r_name in default_regions:
                 session.add(Region(name=r_name))
                 
-        # Seed default permissions if empty
-        perm_res = await session.exec(select(Permission))
-        if not perm_res.first():
-            default_perms = [
-                {"name": "manage_users", "label": "Manage Users", "description": "Allows creating, updating, and deleting system accounts"},
-                {"name": "manage_services", "label": "Manage Services", "description": "Allows modification of service catalog configurations"},
-                {"name": "manage_questions", "label": "Manage Questions", "description": "Allows editing survey evaluation questions"},
-                {"name": "manage_metadata", "label": "Manage Metadata", "description": "Allows editing region and client type dropdown options"},
-                {"name": "view_audit_logs", "label": "View Audit Logs", "description": "Allows viewing database-level action tracking logs"}
-            ]
-            for p in default_perms:
+        # Seed/Ensure default permissions exist
+        default_perms = [
+            {"name": "manage_users", "label": "Manage Users", "description": "Allows creating, updating, and deleting system accounts"},
+            {"name": "manage_services", "label": "Manage Services", "description": "Allows modification of service catalog configurations"},
+            {"name": "manage_questions", "label": "Manage Questions", "description": "Allows editing survey evaluation questions"},
+            {"name": "manage_metadata", "label": "Manage Metadata", "description": "Allows editing region and client type dropdown options"},
+            {"name": "view_audit_logs", "label": "View Audit Logs", "description": "Allows viewing database-level action tracking logs"},
+            {"name": "view_analytics", "label": "View Analytics Insights", "description": "Allows viewing the survey analytics insights page"},
+            {"name": "view_monitor", "label": "View Live Monitor", "description": "Allows viewing the live satisfaction monitor page"},
+            {"name": "view_personnel_monitor", "label": "View Personnel Performance", "description": "Allows viewing the personnel performance monitoring page"},
+            {"name": "view_personnel_responses", "label": "View Detailed Responses", "description": "Allows viewing the detailed survey responses ledger"},
+            {"name": "view_org_tree", "label": "View Org Tree Explorer", "description": "Allows viewing the organizational hierarchy tree page"},
+            {"name": "manage_roles", "label": "Manage Roles & Permissions", "description": "Allows managing access roles and system permission scopes"}
+        ]
+        for p in default_perms:
+            existing = await session.exec(select(Permission).where(Permission.name == p["name"]))
+            if not existing.first():
                 session.add(Permission(**p))
 
-        # Seed default roles if empty
-        role_res = await session.exec(select(Role))
-        if not role_res.first():
-            default_roles = [
-                {"name": "Super", "description": "Super Administrator with complete system access", "permissions": ["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs"]},
-                {"name": "Admin", "description": "Standard Administrator with write permissions except user accounts modification", "permissions": ["manage_services", "manage_questions", "manage_metadata", "view_audit_logs"]},
-                {"name": "Unit", "description": "Standard personnel account with view dashboard access", "permissions": []},
-                {"name": "Client", "description": "End-user / Client account for filling out surveys", "permissions": []}
-            ]
-            for r in default_roles:
-                session.add(Role(**r))
+        # Seed/Ensure default roles exist and have defaults bound
+        default_roles = [
+            {"name": "Super", "description": "Super Administrator with complete system access", "permissions": [
+                "manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs",
+                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree", "manage_roles"
+            ]},
+            {"name": "Admin", "description": "Standard Administrator with write permissions except user accounts modification", "permissions": [
+                "manage_services", "manage_questions", "manage_metadata", "view_audit_logs",
+                "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree"
+            ]},
+            {"name": "Unit", "description": "Standard personnel account with view dashboard access", "permissions": []},
+            {"name": "Client", "description": "End-user / Client account for filling out surveys", "permissions": []}
+        ]
+        for r_data in default_roles:
+            role_db = (await session.exec(select(Role).where(Role.name == r_data["name"]))).first()
+            if not role_db:
+                session.add(Role(**r_data))
+            else:
+                # Merge permissions for standard roles to ensure they are updated
+                new_perms = list(set(role_db.permissions or []) | set(r_data["permissions"]))
+                role_db.permissions = new_perms
+                session.add(role_db)
 
         await session.commit()
 

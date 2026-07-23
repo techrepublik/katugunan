@@ -54,18 +54,18 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
       title: "Performance & Insights",
       links: [
         { name: "Dashboard", href: "/", icon: PieChart, permission: null, roles: ["Super", "Admin", "Unit"] },
-        { name: "Analytics Insights", href: "/admin/analytics", icon: BarChart3, permission: "manage_users", roles: ["Super", "Admin"] },
-        { name: "Live Monitor", href: "/admin/monitor", icon: Activity, permission: "manage_users", roles: ["Super", "Admin"] },
-        { name: "Personnel Performance", href: "/admin/personnel-monitor", icon: UserCheck, permission: "manage_users", roles: ["Super", "Admin"] },
-        { name: "Detailed Responses", href: "/admin/personnel-responses", icon: FileSpreadsheet, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Analytics Insights", href: "/admin/analytics", icon: BarChart3, permission: "view_analytics", roles: ["Super", "Admin"] },
+        { name: "Live Monitor", href: "/admin/monitor", icon: Activity, permission: "view_monitor", roles: ["Super", "Admin"] },
+        { name: "Personnel Performance", href: "/admin/personnel-monitor", icon: UserCheck, permission: "view_personnel_monitor", roles: ["Super", "Admin"] },
+        { name: "Detailed Responses", href: "/admin/personnel-responses", icon: FileSpreadsheet, permission: "view_personnel_responses", roles: ["Super", "Admin"] },
       ]
     },
     {
       title: "Administration",
       links: [
         { name: "User Management", href: "/admin/users", icon: Users, permission: "manage_users", roles: ["Super", "Admin"] },
-        { name: "Roles & Permissions", href: "/admin/roles-permissions", icon: Shield, permission: "manage_users", roles: ["Super", "Admin"] },
-        { name: "Org Tree Explorer", href: "/admin/org-tree", icon: FolderTree, permission: "manage_users", roles: ["Super", "Admin"] },
+        { name: "Roles & Permissions", href: "/admin/roles-permissions", icon: Shield, permission: "manage_roles", roles: ["Super", "Admin"] },
+        { name: "Org Tree Explorer", href: "/admin/org-tree", icon: FolderTree, permission: "view_org_tree", roles: ["Super", "Admin"] },
         { name: "Service Catalog", href: "/admin/services", icon: Settings, permission: "manage_services", roles: ["Super", "Admin"] },
         { name: "Survey Questions", href: "/admin/questions", icon: HelpCircle, permission: "manage_questions", roles: ["Super", "Admin"] },
         { name: "Survey Dropdowns", href: "/admin/metadata", icon: BookOpen, permission: "manage_metadata", roles: ["Super", "Admin"] },
@@ -96,12 +96,11 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
         {menuGroups.map((group, groupIdx) => {
           const isSuper = userLevel?.toLowerCase() === "super";
           const accessibleLinks = group.links.filter((link) => {
-            return (
-              isSuper ||
-              !link.permission ||
-              permissions.includes(link.permission) ||
-              link.roles.map((r) => r.toLowerCase()).includes(userLevel?.toLowerCase())
-            );
+            if (isSuper) return true;
+            if (link.permission) {
+              return permissions.includes(link.permission);
+            }
+            return link.roles.map((r) => r.toLowerCase()).includes(userLevel?.toLowerCase());
           });
 
           if (accessibleLinks.length === 0) return null;

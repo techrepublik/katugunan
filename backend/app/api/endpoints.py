@@ -138,7 +138,7 @@ async def read_org_nodes(
 ) -> Any:
     return await crud.get_org_nodes(session)
 
-@router.get("/org-nodes/tree", response_model=List[schemas.OrgNodeTreeOut], dependencies=[Depends(deps.allow_dashboard)])
+@router.get("/org-nodes/tree", response_model=List[schemas.OrgNodeTreeOut], dependencies=[Depends(deps.has_permission("view_org_tree"))])
 async def read_org_node_tree(
     session: AsyncSession = Depends(get_session)
 ) -> Any:
@@ -537,14 +537,14 @@ async def delete_permission_route(
 @router.get("/roles", response_model=List[schemas.RoleOut])
 async def read_roles(
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(deps.has_permission("manage_users"))
+    current_user: User = Depends(deps.has_permission("manage_roles"))
 ) -> Any:
     return await crud.get_roles(session)
 
 @router.post("/roles", response_model=schemas.RoleOut)
 async def create_role_route(
     r_in: schemas.RoleCreate,
-    current_user: User = Depends(deps.has_permission("manage_users")),
+    current_user: User = Depends(deps.has_permission("manage_roles")),
     session: AsyncSession = Depends(get_session)
 ) -> Any:
     from sqlmodel import select
@@ -560,7 +560,7 @@ async def create_role_route(
 async def update_role_route(
     r_id: int,
     r_in: schemas.RoleCreate,
-    current_user: User = Depends(deps.has_permission("manage_users")),
+    current_user: User = Depends(deps.has_permission("manage_roles")),
     session: AsyncSession = Depends(get_session)
 ) -> Any:
     db_role = await crud.get_role(session, r_id)
@@ -584,7 +584,7 @@ async def update_role_route(
 @router.delete("/roles/{r_id}")
 async def delete_role_route(
     r_id: int,
-    current_user: User = Depends(deps.has_permission("manage_users")),
+    current_user: User = Depends(deps.has_permission("manage_roles")),
     session: AsyncSession = Depends(get_session)
 ) -> Any:
     db_role = await crud.get_role(session, r_id)
@@ -768,7 +768,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-@router.get("/surveys", response_model=List[schemas.SurveyOut], dependencies=[Depends(deps.allow_dashboard)])
+@router.get("/surveys", response_model=List[schemas.SurveyOut], dependencies=[Depends(deps.has_permission("view_monitor"))])
 async def read_surveys(
     current_user: User = Depends(deps.get_current_user),
     session: AsyncSession = Depends(get_session)
@@ -852,7 +852,7 @@ async def get_filtered_surveys(
     return res.scalars().all()
 
 
-@router.get("/surveys/analytics", dependencies=[Depends(deps.allow_dashboard)])
+@router.get("/surveys/analytics", dependencies=[Depends(deps.has_permission("view_analytics"))])
 async def get_survey_analytics(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
@@ -1085,7 +1085,7 @@ async def export_surveys_csv(
     return response
 
 
-@router.get("/surveys/personnel-stats", dependencies=[Depends(deps.allow_dashboard)])
+@router.get("/surveys/personnel-stats", dependencies=[Depends(deps.has_permission("view_personnel_monitor"))])
 async def get_personnel_stats(
     scope_type: str = "all",
     target_id: Optional[int] = None,
@@ -1337,7 +1337,7 @@ async def get_personnel_stats(
     }
 
 
-@router.get("/surveys/personnel-responses", response_model=List[schemas.SurveyOut], dependencies=[Depends(deps.allow_dashboard)])
+@router.get("/surveys/personnel-responses", response_model=List[schemas.SurveyOut], dependencies=[Depends(deps.has_permission("view_personnel_responses"))])
 async def get_personnel_responses(
     evaluator_user_id: int,
     start_date: Optional[str] = None,
@@ -1403,7 +1403,7 @@ async def get_personnel_responses(
     return res.scalars().all()
 
 
-@router.get("/surveys/personnel-ratings", dependencies=[Depends(deps.allow_dashboard)])
+@router.get("/surveys/personnel-ratings", dependencies=[Depends(deps.has_any_permission(["view_personnel_monitor", "view_personnel_responses"]))])
 async def get_personnel_ratings(
     session: AsyncSession = Depends(get_session)
 ) -> Any:

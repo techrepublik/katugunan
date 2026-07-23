@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
-import { Shield, Plus, Edit2, Trash2, CheckCircle2, Lock, X } from "lucide-react";
+import { Shield, Plus, Edit2, Trash2, CheckCircle2, Lock, X, Info } from "lucide-react";
 import Toast from "@/components/Toast";
 
 interface Permission {
@@ -223,7 +224,7 @@ export default function RolesPermissionsPage() {
   };
 
   const handleDeletePerm = async (id: number, name: string) => {
-    if (["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs"].includes(name)) {
+    if (["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs", "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree", "manage_roles"].includes(name)) {
       showToast("System default permissions cannot be deleted.", "error");
       return;
     }
@@ -283,6 +284,33 @@ export default function RolesPermissionsPage() {
                 <Plus size={18} /> Add Permission Key
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Info Banner / Guide */}
+        <div className="bg-emerald-50/50 border border-emerald-100/80 rounded-2xl p-5 mb-6 flex flex-col md:flex-row md:items-start gap-4">
+          <div className="bg-emerald-100 text-emerald-800 p-2.5 rounded-xl shrink-0">
+            <Info size={22} className="text-emerald-700" />
+          </div>
+          <div className="space-y-1.5">
+            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              Access Control & User Assignment Guide
+            </h4>
+            <p className="text-xs text-slate-650 leading-relaxed">
+              Define the security roles and specific permission keys here. 
+              To assign roles (User Levels) or grant <strong>additional custom permissions</strong> as overrides to specific users, navigate to the <Link href="/admin/users" className="text-emerald-700 font-bold underline hover:text-emerald-800 transition-colors">User Directory</Link>.
+            </p>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5 pt-1.5 text-[10px] text-slate-500 font-semibold">
+              <span className="flex items-center gap-1">
+                <CheckCircle2 size={12} className="text-emerald-600" /> Use the <strong>Add Security Role</strong> button to create new roles.
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 size={12} className="text-emerald-600" /> Custom roles automatically populate in the user creation & edit options.
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 size={12} className="text-emerald-600" /> You can customize and check additional permissions per user as overrides.
+              </span>
+            </div>
           </div>
         </div>
 
@@ -399,7 +427,7 @@ export default function RolesPermissionsPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {permissions.map((perm) => {
-                      const isDefault = ["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs"].includes(perm.name);
+                      const isDefault = ["manage_users", "manage_services", "manage_questions", "manage_metadata", "view_audit_logs", "view_analytics", "view_monitor", "view_personnel_monitor", "view_personnel_responses", "view_org_tree", "manage_roles"].includes(perm.name);
                       return (
                         <tr key={perm.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
