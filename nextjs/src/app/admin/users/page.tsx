@@ -648,6 +648,20 @@ export default function UsersPage() {
                       } else {
                         setSelectedPermissions([]);
                       }
+
+                      // Clear orgNodeId if it doesn't match the new role type
+                      const levelUpper = level.toUpperCase();
+                      if (!["SUPER", "ADMIN", "CLIENT"].includes(levelUpper)) {
+                        const currentSelectNode = nodes.find(n => n.id === orgNodeId);
+                        if (currentSelectNode) {
+                          const matchedTypes = ["BRANCH", "UNIT", "DEPARTMENT", "POSITION", "LAB"].filter(type => 
+                            levelUpper.includes(type)
+                          );
+                          if (matchedTypes.length > 0 && !matchedTypes.includes(currentSelectNode.node_type.toUpperCase())) {
+                            setOrgNodeId(null);
+                          }
+                        }
+                      }
                     }}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                   >
@@ -745,15 +759,52 @@ export default function UsersPage() {
                   <label className="block text-xs uppercase font-bold tracking-wider text-slate-500 mb-1">Assigned Department Node</label>
                   <select
                     value={orgNodeId || ""}
-                    onChange={(e) => setOrgNodeId(e.target.value ? parseInt(e.target.value) : null)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const parsedId = val ? parseInt(val) : null;
+                      setOrgNodeId(parsedId);
+                      
+                      if (parsedId) {
+                        const selectedNode = nodes.find(n => n.id === parsedId);
+                        if (selectedNode) {
+                          const typeTitle = selectedNode.node_type.charAt(0).toUpperCase() + selectedNode.node_type.slice(1).toLowerCase();
+                          // If typeTitle is one of our default hierarchical levels
+                          if (["Branch", "Unit", "Department", "Position", "Lab"].includes(typeTitle)) {
+                            setUserLevel(typeTitle);
+                            // Auto-select permissions depending on level
+                            const matchingRole = allRoles.find(r => r.name === typeTitle);
+                            if (matchingRole && matchingRole.permissions) {
+                              setSelectedPermissions(matchingRole.permissions);
+                            } else {
+                              setSelectedPermissions([]);
+                            }
+                          }
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                   >
                     <option value="">Not Assigned</option>
-                    {nodes.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.name} ({n.node_type})
-                      </option>
-                    ))}
+                    {nodes
+                      .filter((n) => {
+                        const levelUpper = userLevel?.toUpperCase();
+                        if (["SUPER", "ADMIN", "CLIENT"].includes(levelUpper)) {
+                          return true;
+                        }
+                        const matchedTypes = ["BRANCH", "UNIT", "DEPARTMENT", "POSITION", "LAB"].filter(type => 
+                          levelUpper.includes(type)
+                        );
+                        if (matchedTypes.length > 0) {
+                          return matchedTypes.includes(n.node_type.toUpperCase());
+                        }
+                        return true;
+                      })
+                      .map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.name} ({n.node_type})
+                        </option>
+                      ))
+                    }
                   </select>
                 </div>
 
