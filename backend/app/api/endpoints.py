@@ -134,15 +134,22 @@ async def create_org_node_route(
 
 @router.get("/org-nodes", response_model=List[schemas.OrgNodeOut], dependencies=[Depends(deps.allow_dashboard)])
 async def read_org_nodes(
+    current_user: User = Depends(deps.get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Any:
-    return await crud.get_org_nodes(session)
+    return await crud.get_org_nodes(session, current_user=current_user)
 
 @router.get("/org-nodes/tree", response_model=List[schemas.OrgNodeTreeOut], dependencies=[Depends(deps.has_permission("view_org_tree"))])
 async def read_org_node_tree(
+    current_user: User = Depends(deps.get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Any:
-    return await crud.get_org_node_tree(session)
+    root_node_id = None
+    if current_user.user_level not in ["Super", "Admin"]:
+        root_node_id = current_user.org_node_id
+        if not root_node_id:
+            return []
+    return await crud.get_org_node_tree(session, root_node_id=root_node_id)
 
 @router.put("/org-nodes/{node_id}", response_model=schemas.OrgNodeOut)
 async def update_org_node(

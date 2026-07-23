@@ -61,16 +61,22 @@ async def create_org_node(session: AsyncSession, node_in: OrgNodeCreate) -> Orga
     await session.refresh(db_node)
     return db_node
 
-async def get_org_nodes(session: AsyncSession) -> List[OrganizationNode]:
+async def get_org_nodes(session: AsyncSession, current_user: Optional[User] = None) -> List[OrganizationNode]:
     from sqlalchemy.orm import selectinload
     stmt = select(OrganizationNode).options(selectinload(OrganizationNode.children))
+    if current_user and current_user.user_level not in ["Super", "Admin"]:
+        if current_user.org_node_id:
+            descendants = await get_node_descendants(session, current_user.org_node_id)
+            stmt = stmt.where(OrganizationNode.id.in_(descendants))
+        else:
+            stmt = stmt.where(OrganizationNode.id == -9999)
     res = await session.execute(stmt)
     return res.scalars().all()
 
-async def get_org_node_tree(session: AsyncSession) -> List[OrganizationNode]:
+async def get_org_node_tree(session: AsyncSession, root_node_id: Optional[int] = None) -> List[OrganizationNode]:
     """Fetches root nodes and their children recursively."""
     from sqlalchemy.orm import selectinload
-    stmt = select(OrganizationNode).where(OrganizationNode.parent_id == None).options(
+    stmt = select(OrganizationNode).options(
         selectinload(OrganizationNode.children)
         .selectinload(OrganizationNode.children)
         .selectinload(OrganizationNode.children)
@@ -80,6 +86,11 @@ async def get_org_node_tree(session: AsyncSession) -> List[OrganizationNode]:
         .selectinload(OrganizationNode.children)
         .selectinload(OrganizationNode.children)
     )
+    if root_node_id is not None:
+        stmt = stmt.where(OrganizationNode.id == root_node_id)
+    else:
+        stmt = stmt.where(OrganizationNode.parent_id == None)
+        
     res = await session.execute(stmt)
     return res.scalars().all()
 
