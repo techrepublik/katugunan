@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Loader2, Save, Key, Shield, QrCode, Download, User as UserIcon } from "lucide-react";
 
 interface UserProfile {
@@ -162,14 +160,8 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-slate-50">
-        <Sidebar userLevel="Unit" />
-        <div className="flex-1 flex flex-col">
-          <Navbar username="Loading..." userLevel="Unit" />
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="animate-spin text-emerald-600" size={48} />
-          </div>
-        </div>
+      <div className="flex-1 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="animate-spin text-emerald-600" size={48} />
       </div>
     );
   }
@@ -179,13 +171,7 @@ export default function ProfilePage() {
     : null;
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-tr from-slate-50 via-slate-100 to-slate-200">
-      <Sidebar userLevel={user?.user_level || "Unit"} />
-      
-      <div className="flex-1 flex flex-col">
-        <Navbar username={user?.username || ""} userLevel={user?.user_level || "Unit"} />
-        
-        <main className="flex-1 p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+    <main className="flex-1 p-8 overflow-y-auto max-w-7xl mx-auto w-full bg-gradient-to-tr from-slate-50 via-slate-100 to-slate-200 min-h-full">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
@@ -437,7 +423,5 @@ export default function ProfilePage() {
 
           </div>
         </main>
-      </div>
-    </div>
   );
 }

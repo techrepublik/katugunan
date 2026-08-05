@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { 
   Loader2, 
   Download, 
@@ -293,12 +291,7 @@ export default function AnalyticsPage() {
     : [];
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar userLevel={currentUser?.user_level || "Super"} />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Navbar username={currentUser?.username || "Admin"} userLevel={currentUser?.user_level || "Super"} />
-
-        <main className="flex-1 p-6 md:p-8 space-y-6 overflow-y-auto print:p-0">
+    <main className="flex-1 p-6 md:p-8 space-y-6 overflow-y-auto print:p-0">
           
           {/* Header Action row */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5 print:hidden">
@@ -723,7 +716,5 @@ export default function AnalyticsPage() {
           )}
 
         </main>
-      </div>
-    </div>
   );
 }

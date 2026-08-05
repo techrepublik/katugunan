@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Loader2, Plus, Trash2, Edit2, Check, X, HelpCircle } from "lucide-react";
 import Toast from "@/components/Toast";
 const apiBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
@@ -161,11 +159,8 @@ export default function QuestionsPage() {
   const hasWriteAccess = user?.user_level?.toLowerCase() === "super" || user?.user_level?.toLowerCase() === "admin";
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar userLevel={user?.user_level || "Unit"} />
-      <div className="flex-1 flex flex-col">
-        <Navbar username={user ? `${user.first_name} ${user.last_name}` : "Admin"} userLevel={user?.user_level || "Unit"} />
-        <main className="flex-1 p-8 overflow-y-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
               <div>
@@ -251,7 +246,6 @@ export default function QuestionsPage() {
             )}
           </div>
         </main>
-      </div>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {/* Modal */}
       {modalOpen && (
@@ -316,6 +310,6 @@ export default function QuestionsPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

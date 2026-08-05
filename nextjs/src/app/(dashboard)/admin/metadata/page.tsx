@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Loader2, Plus, Trash, Users, MapPin, ChevronDown, ChevronUp, Edit2, Check, X } from "lucide-react";
 import Toast from "@/components/Toast";
 
@@ -233,12 +231,8 @@ export default function MetadataPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar userLevel="Super" />
-      <div className="flex-1 flex flex-col">
-        <Navbar username="Admin" userLevel="Super" />
-        
-        <main className="flex-1 p-8 overflow-y-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-6">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">Dynamic Survey Dropdowns</h1>
@@ -492,8 +486,7 @@ export default function MetadataPage() {
             )}
           </div>
         </main>
-      </div>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    </>
   );
 }

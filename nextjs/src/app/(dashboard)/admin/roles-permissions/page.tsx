@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Sidebar from "@/components/Sidebar";
 import { Shield, Plus, Edit2, Trash2, CheckCircle2, Lock, X, Info } from "lucide-react";
 import Toast from "@/components/Toast";
 
@@ -264,9 +263,7 @@ export default function RolesPermissionsPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans">
-      <Sidebar userLevel={userLevel} />
-
+    <>
       <main className="flex-1 p-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -668,6 +665,6 @@ export default function RolesPermissionsPage() {
         </div>
       )}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    </>
   );
 }

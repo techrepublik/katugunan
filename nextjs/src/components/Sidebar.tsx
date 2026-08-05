@@ -17,14 +17,22 @@ import {
   BarChart3,
   Activity,
   UserCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 interface SidebarProps {
   userLevel?: string;
+  isCollapsed?: boolean;
+  toggleSidebar?: () => void;
 }
 
-export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
+export default function Sidebar({ 
+  userLevel: initialUserLevel,
+  isCollapsed = false,
+  toggleSidebar
+}: SidebarProps) {
   const pathname = usePathname();
   const [userLevel, setUserLevel] = useState<string>(initialUserLevel || "Client");
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -86,15 +94,28 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
   };
 
   return (
-    <aside className="w-64 bg-emerald-700 text-white min-h-screen flex flex-col p-6 shadow-xl border-r-4 border-gold-500">
-      <div className="text-center mb-8 pb-4 border-b border-white/20">
+    <aside className={`${isCollapsed ? "w-20 px-3 py-6" : "w-64 p-6"} bg-emerald-700 text-white min-h-screen flex flex-col shadow-xl border-r-4 border-gold-500 transition-all duration-300 relative`}>
+      {toggleSidebar && (
+        <button
+          onClick={toggleSidebar}
+          className="absolute -right-3.5 top-6 bg-gold-500 hover:bg-gold-600 text-emerald-950 rounded-full p-1 shadow-md border border-emerald-800 z-50 transition-colors"
+        >
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+      )}
+
+      <div className="text-center mb-8 pb-4 border-b border-white/20 flex flex-col items-center">
         <img 
           src="/logo.png" 
           alt="Katugunan Logo" 
-          className="w-16 h-16 mx-auto mb-3 object-contain rounded-full bg-white/95 p-1.5 shadow-md border border-white/10" 
+          className={`${isCollapsed ? "w-10 h-10" : "w-16 h-16"} transition-all duration-300 object-contain rounded-full bg-white/95 p-1 shadow-md border border-white/10`} 
         />
-        <div className="font-bold text-lg tracking-wider text-gold-400">USM KATUGUNAN</div>
-        <div className="text-xs text-white/60 mt-1">Satisfaction Monitoring</div>
+        {!isCollapsed && (
+          <>
+            <div className="font-bold text-lg tracking-wider text-gold-400 mt-3">USM KATUGUNAN</div>
+            <div className="text-xs text-white/60 mt-1">Satisfaction Monitoring</div>
+          </>
+        )}
       </div>
 
       <nav className="flex-1 space-y-4 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
@@ -112,9 +133,13 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
 
           return (
             <div key={groupIdx} className="space-y-1">
-              <div className="text-[10px] font-black text-emerald-200/50 uppercase tracking-widest px-4 py-1 select-none">
-                {group.title}
-              </div>
+              {!isCollapsed ? (
+                <div className="text-[10px] font-black text-emerald-200/50 uppercase tracking-widest px-4 py-1 select-none">
+                  {group.title}
+                </div>
+              ) : (
+                <div className="h-px bg-white/10 my-2" />
+              )}
               <div className="space-y-0.5">
                 {accessibleLinks.map((link) => {
                   const Icon = link.icon;
@@ -124,14 +149,15 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
                     <Link
                       key={link.name}
                       href={link.href}
-                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      title={isCollapsed ? link.name : undefined}
+                      className={`flex items-center ${isCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-4 py-2.5"} rounded-xl text-xs font-semibold transition-all ${
                         isActive
                           ? "bg-white/10 text-gold-400 font-bold shadow-sm"
                           : "text-emerald-100 hover:bg-white/5 hover:text-gold-300"
                       }`}
                     >
                       <Icon size={16} className={isActive ? "text-gold-400" : "text-emerald-300"} />
-                      <span>{link.name}</span>
+                      {!isCollapsed && <span>{link.name}</span>}
                     </Link>
                   );
                 })}
@@ -143,10 +169,11 @@ export default function Sidebar({ userLevel: initialUserLevel }: SidebarProps) {
 
       <button
         onClick={handleLogout}
-        className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-red-200 hover:bg-red-900/20 hover:text-red-400 mt-auto transition-all"
+        title={isCollapsed ? "Logout" : undefined}
+        className={`flex items-center ${isCollapsed ? "justify-center p-2.5" : "gap-3 px-4 py-3"} rounded-lg font-medium text-red-200 hover:bg-red-900/20 hover:text-red-400 mt-auto transition-all w-full`}
       >
         <LogOut size={18} />
-        Logout
+        {!isCollapsed && <span>Logout</span>}
       </button>
     </aside>
   );

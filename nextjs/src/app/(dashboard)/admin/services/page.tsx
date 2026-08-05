@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { 
   Loader2, 
   Plus, 
@@ -222,12 +220,8 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar userLevel="Super" />
-      <div className="flex-1 flex flex-col">
-        <Navbar username="Admin" userLevel="Super" />
-        
-        <main className="flex-1 p-8 overflow-y-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto space-y-6">
             
             {/* Header section */}
@@ -470,7 +464,6 @@ export default function ServicesPage() {
             </div>
           </div>
         </main>
-      </div>
 
       {/* Elegant Modal Backdrop & Window */}
       {isModalOpen && (
@@ -600,6 +593,6 @@ export default function ServicesPage() {
         </div>
       )}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    </>
   );
 }

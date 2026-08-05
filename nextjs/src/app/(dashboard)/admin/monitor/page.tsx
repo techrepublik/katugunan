@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { 
   Loader2, 
   Activity, 
@@ -342,14 +340,7 @@ export default function LiveMonitorPage() {
   const overallCsat = totalRatingCount > 0 ? ((csatCount / totalRatingCount) * 100).toFixed(1) : "100.0";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100">
-      <Sidebar userLevel={currentUser?.user_level || "Super"} />
-      
-      <div className="flex-1 flex flex-col min-w-0 h-full relative">
-        <Navbar username={currentUser?.username || "Admin"} userLevel={currentUser?.user_level || "Super"} />
-
-        {/* Real-time Map Viewport */}
-        <div className="flex-1 w-full h-[calc(100vh-64px)] relative z-10">
+    <div className="flex-1 w-full h-[calc(100vh-64px)] relative z-10">
           
           {loading && (
             <div className="absolute inset-0 bg-slate-100 z-50 flex flex-col items-center justify-center space-y-3">
@@ -508,8 +499,5 @@ export default function LiveMonitorPage() {
           </div>
 
         </div>
-
-      </div>
-    </div>
   );
 }

@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { 
   Loader2, 
   TrendingUp, 
@@ -116,13 +114,7 @@ export default function DashboardPage() {
   const totalRegions = Object.values(regionData).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar userLevel={user?.user_level} />
-      
-      <div className="flex-1 flex flex-col">
-        <Navbar username={user ? `${user.first_name} ${user.last_name}` : "Admin"} userLevel={user?.user_level} />
-        
-        <main className="flex-1 p-8 overflow-y-auto">
+    <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto space-y-8">
             
             {/* Header info */}
@@ -415,7 +407,5 @@ export default function DashboardPage() {
 
           </div>
         </main>
-      </div>
-    </div>
   );
 }

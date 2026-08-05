@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -403,13 +401,7 @@ export default function PersonnelMonitorPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar userLevel={currentUser?.user_level || "Super"} />
-      
-      <div className="flex-1 flex flex-col min-w-0">
-        <Navbar username={currentUser?.username || "Admin"} userLevel={currentUser?.user_level || "Super"} />
-
-        <main className="flex-1 p-6 md:p-8 flex flex-col space-y-6 overflow-y-auto">
+    <main className="flex-1 p-6 md:p-8 flex flex-col space-y-6 overflow-y-auto">
           
           {/* Title block */}
           <div className="border-b border-slate-200 pb-5">
@@ -790,7 +782,5 @@ export default function PersonnelMonitorPage() {
           )}
 
         </main>
-      </div>
-    </div>
   );
 }

@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, Fragment } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { 
   Loader2, 
   UserCheck, 
@@ -318,19 +316,7 @@ export default function PersonnelResponsesPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 print:bg-white print:p-0">
-      
-      {/* Sidebar hidden when printing reports */}
-      <div className="print:hidden">
-        <Sidebar userLevel={currentUser?.user_level || "Super"} />
-      </div>
-
-      <div className="flex-1 flex flex-col min-w-0 h-full">
-        <div className="print:hidden">
-          <Navbar username={currentUser?.username || "Admin"} userLevel={currentUser?.user_level || "Super"} />
-        </div>
-
-        <main className="flex-1 p-6 md:p-8 flex flex-col space-y-6 overflow-y-auto print:p-0 print:m-0">
+    <main className="flex-1 p-6 md:p-8 flex flex-col space-y-6 overflow-y-auto print:p-0 print:m-0">
           
           {/* Header block */}
           <div className="flex items-center justify-between border-b border-slate-200 pb-5 print:border-none print:pb-2">
@@ -702,7 +688,5 @@ export default function PersonnelResponsesPage() {
           </div>
 
         </main>
-      </div>
-    </div>
   );
 }

@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { 
   Loader2, Plus, Trash, UserPlus, FileText, QrCode, 
   Printer, Search, ArrowUpDown, Edit, Shield, Info, CheckSquare, Square
@@ -353,13 +351,8 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-tr from-slate-50 via-slate-100 to-slate-200">
-      <Sidebar userLevel={currentUser?.user_level || "Unit"} />
-      
-      <div className="flex-1 flex flex-col">
-        <Navbar username={currentUser?.username || "Admin"} userLevel={currentUser?.user_level || "Super"} />
-        
-        <main className="flex-1 p-8 overflow-y-auto w-full max-w-7xl mx-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto w-full max-w-7xl mx-auto bg-gradient-to-tr from-slate-50 via-slate-100 to-slate-200 min-h-full">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
@@ -570,7 +563,6 @@ export default function UsersPage() {
             )}
           </div>
         </main>
-      </div>
 
       {/* CRUD Modal */}
       {isModalOpen && (
@@ -939,6 +931,6 @@ export default function UsersPage() {
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-    </div>
+    </>
   );
 }

@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { 
   Loader2, Plus, Trash, Edit, ChevronRight, ChevronDown, Folder, ShieldAlert, User, 
   Check, X, Search 
@@ -521,12 +519,8 @@ export default function OrgTreePage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar username="Admin" userLevel="Super" />
-        
-        <main className="flex-1 p-8 overflow-y-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto space-y-6">
             
             {/* Header card with action */}
@@ -592,7 +586,6 @@ export default function OrgTreePage() {
 
           </div>
         </main>
-      </div>
 
       {/* Delete confirmation modal */}
       {deleteConfirmNode && (
@@ -651,6 +644,6 @@ export default function OrgTreePage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
