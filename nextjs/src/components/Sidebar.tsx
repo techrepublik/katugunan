@@ -18,8 +18,7 @@ import {
   Activity,
   UserCheck,
   FileSpreadsheet,
-  ChevronLeft,
-  ChevronRight
+  Menu
 } from "lucide-react";
 
 interface SidebarProps {
@@ -95,26 +94,30 @@ export default function Sidebar({
 
   return (
     <aside className={`${isCollapsed ? "w-20 px-3 py-6" : "w-64 p-6"} bg-emerald-700 text-white min-h-screen flex flex-col shadow-xl border-r-4 border-gold-500 transition-all duration-300 relative`}>
-      {toggleSidebar && (
-        <button
-          onClick={toggleSidebar}
-          className="absolute -right-3.5 top-6 bg-gold-500 hover:bg-gold-600 text-emerald-950 rounded-full p-1 shadow-md border border-emerald-800 z-50 transition-colors"
-        >
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-      )}
-
-      <div className="text-center mb-8 pb-4 border-b border-white/20 flex flex-col items-center">
-        <img 
-          src="/logo.png" 
-          alt="Katugunan Logo" 
-          className={`${isCollapsed ? "w-10 h-10" : "w-16 h-16"} transition-all duration-300 object-contain rounded-full bg-white/95 p-1 shadow-md border border-white/10`} 
-        />
+      <div className="flex flex-col items-center mb-8 pb-4 border-b border-white/20 relative w-full">
+        <div className={`flex w-full ${isCollapsed ? "justify-center" : "justify-between"} items-center mb-4`}>
+          {!isCollapsed && (
+            <img 
+              src="/logo.png" 
+              alt="Katugunan Logo" 
+              className="w-10 h-10 object-contain rounded-full bg-white/95 p-1 shadow-md border border-white/10" 
+            />
+          )}
+          {toggleSidebar && (
+            <button 
+              onClick={toggleSidebar} 
+              className="text-emerald-100 hover:text-gold-400 p-1.5 rounded-xl hover:bg-white/10 transition-all duration-200"
+              title={isCollapsed ? "Expand Menu" : "Collapse Menu"}
+            >
+              <Menu size={20} />
+            </button>
+          )}
+        </div>
         {!isCollapsed && (
-          <>
-            <div className="font-bold text-lg tracking-wider text-gold-400 mt-3">USM KATUGUNAN</div>
+          <div className="text-center">
+            <div className="font-bold text-lg tracking-wider text-gold-400">USM KATUGUNAN</div>
             <div className="text-xs text-white/60 mt-1">Satisfaction Monitoring</div>
-          </>
+          </div>
         )}
       </div>
 
